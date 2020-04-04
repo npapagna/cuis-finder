@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4102] on 2 April 2020 at 6:23:36 pm'!
+'From Cuis 5.0 [latest update: #4103] on 4 April 2020 at 2:05:57 am'!
 'Description '!
-!provides: 'Tools-Finder' 1 2!
+!provides: 'Tools-Finder' 1 3!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -88,7 +88,7 @@ SendersCatalog class
 
 !classDefinition: #ToolsCatalog category: #'Tools-Finder-Model'!
 Catalog subclass: #ToolsCatalog
-	instanceVariableNames: 'tools'
+	instanceVariableNames: 'tools implementorsCatalog'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
@@ -136,6 +136,11 @@ Object subclass: #SearchBoxEditor
 SearchBoxEditor class
 	instanceVariableNames: ''!
 
+
+!ToolsCatalog commentStamp: '<historical>' prior: 0!
+I am a catalog that contains all tools available in the World > Open... menu.
+
+To avoid hardcoding them, I look for implementors of #worldMenuForOpenGroup and evaluate them to retrieve each menu item (see #initializeTools).!
 
 !CatalogButton commentStamp: 'NPM 4/2/2020 00:48:04' prior: 0!
 I represent a catalog button's model.
@@ -305,17 +310,17 @@ submorphToFocusKeyboard
 
 	^ searchBox textMorph! !
 
-!FinderWindow methodsFor: 'searching' stamp: 'NPM 4/2/2020 00:05:36'!
-search
-	
-	model search: searchBox text asString! !
-
 !FinderWindow methodsFor: 'events-old protocol' stamp: 'NPM 4/2/2020 01:03:18'!
 update: aSymbol
 
 	model
 		isBrowseSelectedResultEvent: aSymbol
 		ifTrue:  [ self closeBoxHit ].! !
+
+!FinderWindow methodsFor: 'searching' stamp: 'NPM 4/2/2020 00:05:36'!
+search
+	
+	model search: searchBox text asString! !
 
 !FinderWindow methodsFor: 'submorphs-add/remove' stamp: 'NPM 4/2/2020 00:25:37'!
 delete
@@ -330,6 +335,11 @@ open
 	^ self
 		open: Finder withAllCatalogs
 		label: 'Finder'! !
+
+!Catalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:18:59'!
+order
+
+	self subclassResponsibility! !
 
 !Catalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:29:31'!
 processEmptySearchQuery
@@ -348,11 +358,6 @@ search: aQuery
 		ifEmpty: [ self processEmptySearchQuery ]
 		ifNotEmpty: [ self processNonEmptySearchQuery: aQuery ]! !
 
-!Catalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:18:59'!
-order
-
-	self subclassResponsibility! !
-
 !Catalog methodsFor: 'testing' stamp: 'NPM 3/29/2020 01:40:37'!
 isNamed: aName 
 	
@@ -363,19 +368,32 @@ browse: aResult
 
 	self subclassResponsibility! !
 
-!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/1/2020 00:44:24'!
+!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:29'!
 all
 	
-	| a |
-	a:= (self allSubclasses select: [:s | s ~= CompositeCatalog ] thenCollect: [ :subclass | subclass new ]).
-	a addFirst: (self composite: a copy).
-		
-	^ a sort: [ :x :y | x order <= y order ] .! !
-
-!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/1/2020 00:29:54'!
-composite: anOrderedCollection 
+	| allCatalogs |
+	allCatalogs := (self createAllCatalogs).
 	
-	^ CompositeCatalog withAll: anOrderedCollection ! !
+	allCatalogs addFirst: (self composite: allCatalogs copy).
+		
+	^ allCatalogs sort: [ :aCatalog :anotherCatalog | aCatalog order <= anotherCatalog order ] .! !
+
+!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:12'!
+composite: children 
+	
+	^ CompositeCatalog withAll: children ! !
+
+!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:53'!
+create
+	
+	^ self new! !
+
+!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:05'!
+createAllCatalogs
+
+	^ self allSubclasses
+		select: [ :subclass | subclass ~= CompositeCatalog ]
+		thenCollect: [ :subclass | subclass create ]! !
 
 !ClassNamesCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:15'!
 order 
@@ -398,11 +416,6 @@ browse: aClassName
 	BrowserWindow
 		fullOnClass: class! !
 
-!CompositeCatalog methodsFor: 'initialization' stamp: 'NPM 4/1/2020 00:30:46'!
-initializeWithAll: children
-
-	catalogs := children! !
-
 !CompositeCatalog methodsFor: 'accessing' stamp: 'NPM 4/1/2020 00:43:42'!
 order
 	
@@ -412,6 +425,11 @@ order
 results
 	
 	^ results values flatten! !
+
+!CompositeCatalog methodsFor: 'initialization' stamp: 'NPM 4/1/2020 00:30:46'!
+initializeWithAll: children
+
+	catalogs := children! !
 
 !CompositeCatalog methodsFor: 'browsing' stamp: 'NPM 4/2/2020 02:25:34'!
 browse: aResult
@@ -520,19 +538,28 @@ browse: aMethodReference
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
 
-!ToolsCatalog methodsFor: 'initialization' stamp: 'NPM 3/31/2020 19:34:52'!
-initialize
-
-	super initialize.
-	tools := OrderedDictionary new.
-	tools at: 'Browser' put: [ BrowserWindow openBrowser ].
-	tools at: 'Transcript' put: [ TranscriptWindow openTranscript ].
-	tools at: 'Workspace' put: [ Workspace openWorkspace ].! !
-
 !ToolsCatalog methodsFor: 'accessing' stamp: 'NPM 3/31/2020 19:09:42'!
 order
 	
 	^ 100! !
+
+!ToolsCatalog methodsFor: 'initialization' stamp: 'NPM 4/4/2020 02:04:59'!
+initializeTools
+
+	self
+		menuItemsForOpenGroup
+		sort: self blockForSortingItemsByLabel;
+		do: [ :menuItem | self addToolFrom: menuItem ]! !
+
+!ToolsCatalog methodsFor: 'initialization' stamp: 'NPM 4/4/2020 02:05:05'!
+initializeWith: anImplementorsCatalog
+
+	super initialize.
+	
+	implementorsCatalog := anImplementorsCatalog.
+	tools := OrderedDictionary new.
+	
+	self initializeTools.! !
 
 !ToolsCatalog methodsFor: 'browsing' stamp: 'NPM 4/2/2020 02:25:34'!
 browse: aToolName
@@ -555,6 +582,39 @@ processNonEmptySearchQuery: aQuery
 toolNames
 
 	^ tools keysSortedSafely! !
+
+!ToolsCatalog methodsFor: 'tools' stamp: 'NPM 4/4/2020 01:48:12'!
+addToolFrom: aMenuItem 
+	
+	tools
+		at: (self labelFor: aMenuItem)
+		put: [ (aMenuItem first at: #object) perform: (aMenuItem first at: #selector) ]! !
+
+!ToolsCatalog methodsFor: 'tools' stamp: 'NPM 4/4/2020 01:47:55'!
+blockForSortingItemsByLabel
+	
+	^ [ :aMenuItem :anotherMenuItem | (self labelFor: aMenuItem) <= (self labelFor: anotherMenuItem) ]! !
+
+!ToolsCatalog methodsFor: 'tools' stamp: 'NPM 4/4/2020 01:47:24'!
+labelFor: aMenuItem
+
+	^ aMenuItem first at: #label! !
+
+!ToolsCatalog methodsFor: 'tools' stamp: 'NPM 4/4/2020 01:49:39'!
+menuItemsForOpenGroup
+
+	^ (ImplementorsCatalog new search: #worldMenuForOpenGroup)
+		collect: [ :implementor |
+				implementor compiledMethod
+					valueWithReceiver: implementor
+					methodClass arguments: {} ]! !
+
+!ToolsCatalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:04:14'!
+create
+
+	^ self
+		new
+		initializeWith: ImplementorsCatalog create! !
 
 !Finder methodsFor: 'catalogs' stamp: 'NPM 4/2/2020 01:20:03'!
 catalogAfterSelectedCatalog
