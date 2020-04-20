@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 4:56:43 pm'!
+'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 5:08:14 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 4!
+!provides: 'Tools-Finder' 1 5!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -108,7 +108,7 @@ CompositeCatalogResult class
 
 !classDefinition: #Finder category: #'Tools-Finder-Model'!
 Object subclass: #Finder
-	instanceVariableNames: 'results selectedResultIndex selectedCatalog catalogs currentQuery changeSelectedCatalogSelectorPrefix isSelectedCatalogSelectorPrefix selectedCatalogChangeEvent browseSelectedResultEvent'
+	instanceVariableNames: 'results selectedResultIndex selectedCatalog catalogs currentQuery changeSelectedCatalogSelectorPrefix isSelectedCatalogSelectorPrefix selectedCatalogChangeEvent browseSelectedResultEvent closeEvent'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
@@ -320,12 +320,16 @@ submorphToFocusKeyboard
 
 	^ searchBox textMorph! !
 
-!FinderWindow methodsFor: 'events-old protocol' stamp: 'NPM 4/2/2020 01:03:18'!
+!FinderWindow methodsFor: 'events-old protocol' stamp: 'NPM 4/20/2020 17:06:01'!
 update: aSymbol
 
 	model
 		isBrowseSelectedResultEvent: aSymbol
-		ifTrue:  [ self closeBoxHit ].! !
+		ifTrue:  [ ^ self closeBoxHit ].
+		
+	model
+		isCloseEvent: aSymbol
+		ifTrue:  [ ^ self closeBoxHit ].! !
 
 !FinderWindow methodsFor: 'searching' stamp: 'NPM 4/2/2020 00:05:36'!
 search
@@ -731,11 +735,12 @@ initializeCatalogs: aCollectionOfCatalogs
 	catalogs := aCollectionOfCatalogs.
 	selectedCatalog := catalogs first.! !
 
-!Finder methodsFor: 'initialization' stamp: 'NPM 4/2/2020 01:04:44'!
+!Finder methodsFor: 'initialization' stamp: 'NPM 4/20/2020 17:03:35'!
 initializeEventNames
 
 	selectedCatalogChangeEvent := #selectedCatalog.
-	browseSelectedResultEvent := #browseSelectedResult.! !
+	browseSelectedResultEvent := #browseSelectedResult.
+	closeEvent := #close.! !
 
 !Finder methodsFor: 'initialization' stamp: 'NPM 4/2/2020 02:33:01'!
 initializeResults
@@ -759,6 +764,12 @@ isBrowseSelectedResultEvent: anEvent ifTrue: aBlock
 	anEvent = browseSelectedResultEvent
 		ifTrue: aBlock! !
 
+!Finder methodsFor: 'events-old protocol' stamp: 'NPM 4/20/2020 17:06:25'!
+isCloseEvent: anEvent ifTrue: aBlock
+
+	anEvent = closeEvent
+		ifTrue: aBlock! !
+
 !Finder methodsFor: 'events-old protocol' stamp: 'NPM 4/2/2020 01:05:06'!
 isSelectedCatalogChange: anEvent ifTrue: aBlock
 
@@ -771,6 +782,11 @@ browseSelectedResult
 	selectedCatalog browse: (results at: selectedResultIndex).
 	
 	self changed: browseSelectedResultEvent! !
+
+!Finder methodsFor: 'results' stamp: 'NPM 4/20/2020 17:03:53'!
+close
+	
+	self changed: closeEvent! !
 
 !Finder methodsFor: 'results' stamp: 'NPM 3/28/2020 01:43:57'!
 results
@@ -925,7 +941,15 @@ processArrowUpOrDown: aKeyboardEvent
 	^ false
 	! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 01:40:00'!
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/20/2020 17:02:53'!
+processEscKey: aKeyboardEvent
+
+	(aKeyboardEvent isEsc)
+		ifTrue: [ model close ].
+		
+	^ aKeyboardEvent isEsc! !
+
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/20/2020 17:01:51'!
 processKeyStroke: aKeyboardEvent
 
 	(self processTab: aKeyboardEvent)
@@ -935,6 +959,9 @@ processKeyStroke: aKeyboardEvent
 		ifTrue: [ ^ self ].
 		
 	(self processReturnKey: aKeyboardEvent)
+		ifTrue: [ ^ self ].
+		
+	(self processEscKey: aKeyboardEvent)
 		ifTrue: [ ^ self ].
 
 	(self forwardToResults: aKeyboardEvent)
