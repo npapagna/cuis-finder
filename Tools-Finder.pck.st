@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 5:08:14 pm'!
+'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 5:47:29 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 5!
+!provides: 'Tools-Finder' 1 6!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -246,14 +246,15 @@ buildMorphicWindow
 	self buildLayout.	
 	self installSearchBoxEditor.! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/1/2020 23:47:36'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/20/2020 17:46:21'!
 buildResults
 
-	results := PluggableListMorph
+	results := (PluggableListMorph
 		model: model
 		listGetter: #results
 		indexGetter: #selectedResultIndex
-		indexSetter: #selectedResultIndex:.! !
+		indexSetter: #selectedResultIndex:)
+		autoDeselect: false! !
 
 !FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 01:40:52'!
 buildSearchBox
