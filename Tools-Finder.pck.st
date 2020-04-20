@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 5:47:29 pm'!
+'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 6:22:15 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 6!
+!provides: 'Tools-Finder' 1 7!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -246,7 +246,7 @@ buildMorphicWindow
 	self buildLayout.	
 	self installSearchBoxEditor.! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/20/2020 17:46:21'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/20/2020 18:19:54'!
 buildResults
 
 	results := (PluggableListMorph
@@ -254,7 +254,8 @@ buildResults
 		listGetter: #results
 		indexGetter: #selectedResultIndex
 		indexSetter: #selectedResultIndex:)
-		autoDeselect: false! !
+		autoDeselect: false;
+		setProperty: #click:localPosition: toValue: [ :aMouseEvent :localEventPosition | self browseResultAt: localEventPosition ]! !
 
 !FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 01:40:52'!
 buildSearchBox
@@ -343,6 +344,15 @@ delete
 	self unregisterKeyStrokeHandlerFromSearchBox.
 	
 	^ super delete.! !
+
+!FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
+browseResultAt: aPosition 
+	
+	model
+		selectedResultIndex: (results rowAtLocation: aPosition);
+		browseSelectedResult
+			
+			! !
 
 !FinderWindow class methodsFor: 'instance creation' stamp: 'NPM 3/29/2020 02:02:48'!
 open
