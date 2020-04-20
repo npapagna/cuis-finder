@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 4 April 2020 at 2:05:57 am'!
+'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 4:56:43 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 3!
+!provides: 'Tools-Finder' 1 4!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -38,7 +38,7 @@ ClassNamesCatalog class
 
 !classDefinition: #CompositeCatalog category: #'Tools-Finder-Model'!
 Catalog subclass: #CompositeCatalog
-	instanceVariableNames: 'catalogs currentQuery results'
+	instanceVariableNames: 'catalogs'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
@@ -94,6 +94,16 @@ Catalog subclass: #ToolsCatalog
 	category: 'Tools-Finder-Model'!
 !classDefinition: 'ToolsCatalog class' category: #'Tools-Finder-Model'!
 ToolsCatalog class
+	instanceVariableNames: ''!
+
+!classDefinition: #CompositeCatalogResult category: #'Tools-Finder-Model'!
+Object subclass: #CompositeCatalogResult
+	instanceVariableNames: 'catalog result'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'CompositeCatalogResult class' category: #'Tools-Finder-Model'!
+CompositeCatalogResult class
 	instanceVariableNames: ''!
 
 !classDefinition: #Finder category: #'Tools-Finder-Model'!
@@ -421,40 +431,32 @@ order
 	
 	^ 999! !
 
-!CompositeCatalog methodsFor: 'accessing' stamp: 'NPM 4/1/2020 00:38:52'!
-results
-	
-	^ results values flatten! !
-
 !CompositeCatalog methodsFor: 'initialization' stamp: 'NPM 4/1/2020 00:30:46'!
 initializeWithAll: children
 
 	catalogs := children! !
 
-!CompositeCatalog methodsFor: 'browsing' stamp: 'NPM 4/2/2020 02:25:34'!
+!CompositeCatalog methodsFor: 'browsing' stamp: 'NPM 4/20/2020 16:31:26'!
 browse: aResult
 
-	^ results associations
-		detect: [ :assoc | assoc value includes: aResult ]
-		ifFound:[ :a | a key browse: aResult ]
-		ifNone: [ self error: 'should not happen' ]
+	aResult browse
 	! !
 
-!CompositeCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
+!CompositeCatalog methodsFor: 'searching' stamp: 'NPM 4/20/2020 16:47:20'!
 processNonEmptySearchQuery: aQuery
+	
+	^ catalogs
+		inject: OrderedCollection new
+		into: [ :results :catalog |
+			results
+				addAll: (self search: aQuery using: catalog);
+				yourself ]! !
 
+!CompositeCatalog methodsFor: 'searching' stamp: 'NPM 4/20/2020 16:53:30'!
+search: aQuery using: aCatalog
 	
-	currentQuery = aQuery 
-		ifTrue: [ ^ self results ].
-
-	currentQuery := aQuery.
-	
-	results := catalogs inject: Dictionary new into: [ :res :catalog |
-		res at: catalog put: (catalog processNonEmptySearchQuery: aQuery).
-		res
-		].
-	
-	^ self results! !
+	^ (aCatalog search: aQuery)
+		collect: [ :result | CompositeCatalogResult with: aCatalog from: result ]! !
 
 !CompositeCatalog class methodsFor: 'instance creation' stamp: 'NPM 4/1/2020 00:30:33'!
 withAll: children 
@@ -615,6 +617,35 @@ create
 	^ self
 		new
 		initializeWith: ImplementorsCatalog create! !
+
+!CompositeCatalogResult methodsFor: 'browsing' stamp: 'NPM 4/20/2020 16:31:40'!
+browse
+	
+	catalog browse: result! !
+
+!CompositeCatalogResult methodsFor: 'initialization' stamp: 'NPM 4/20/2020 16:54:28'!
+initializeWith: aResult from: aCatalog
+
+	catalog := aCatalog.
+	result := aResult.! !
+
+!CompositeCatalogResult methodsFor: 'printing' stamp: 'NPM 4/20/2020 16:24:02'!
+catalogNamePrefix
+	
+	^ '[', catalog name, ']'! !
+
+!CompositeCatalogResult methodsFor: 'printing' stamp: 'NPM 4/20/2020 16:29:57'!
+displayStringOrText
+
+	^ self catalogNamePrefix, ' ', result displayStringOrText! !
+
+!CompositeCatalogResult class methodsFor: 'instance creation' stamp: 'NPM 4/20/2020 16:54:28'!
+with: aResult from: aCatalog
+
+	^ self
+		new
+		initializeWith: aCatalog
+		from: aResult! !
 
 !Finder methodsFor: 'catalogs' stamp: 'NPM 4/2/2020 01:20:03'!
 catalogAfterSelectedCatalog
