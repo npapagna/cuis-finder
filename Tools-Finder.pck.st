@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 20 April 2020 at 6:22:15 pm'!
+'From Cuis 5.0 [latest update: #4103] on 22 April 2020 at 7:38:36 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 7!
+!provides: 'Tools-Finder' 1 8!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -354,17 +354,12 @@ browseResultAt: aPosition
 			
 			! !
 
-!FinderWindow class methodsFor: 'instance creation' stamp: 'NPM 3/29/2020 02:02:48'!
+!FinderWindow class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:33:33'!
 open
 	
 	^ self
-		open: Finder withAllCatalogs
+		open: Finder withDefaultCatalogs
 		label: 'Finder'! !
-
-!Catalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:18:59'!
-order
-
-	self subclassResponsibility! !
 
 !Catalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:29:31'!
 processEmptySearchQuery
@@ -393,37 +388,45 @@ browse: aResult
 
 	self subclassResponsibility! !
 
-!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:29'!
-all
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:34'!
+classNames
 	
-	| allCatalogs |
-	allCatalogs := (self createAllCatalogs).
-	
-	allCatalogs addFirst: (self composite: allCatalogs copy).
-		
-	^ allCatalogs sort: [ :aCatalog :anotherCatalog | aCatalog order <= anotherCatalog order ] .! !
+	^ ClassNamesCatalog create! !
 
-!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:12'!
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/4/2020 02:01:12'!
 composite: children 
 	
 	^ CompositeCatalog withAll: children ! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:37'!
+implementedSelectors
+	
+	^ ImplementedSelectorsCatalog create! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:40'!
+implementors
+	
+	^ ImplementorsCatalog create! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:45'!
+senders
+	
+	^ SendersCatalog create! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:51'!
+systemCategories
+	
+	^ PackagesCatalog create! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:53'!
+tools
+	
+	^ ToolsCatalog create! !
 
 !Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:53'!
 create
 	
 	^ self new! !
-
-!Catalog class methodsFor: 'instance creation' stamp: 'NPM 4/4/2020 02:01:05'!
-createAllCatalogs
-
-	^ self allSubclasses
-		select: [ :subclass | subclass ~= CompositeCatalog ]
-		thenCollect: [ :subclass | subclass create ]! !
-
-!ClassNamesCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:15'!
-order 
-
-	^ 1! !
 
 !ClassNamesCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery
@@ -440,11 +443,6 @@ browse: aClassName
 	
 	BrowserWindow
 		fullOnClass: class! !
-
-!CompositeCatalog methodsFor: 'accessing' stamp: 'NPM 4/1/2020 00:43:42'!
-order
-	
-	^ 999! !
 
 !CompositeCatalog methodsFor: 'initialization' stamp: 'NPM 4/1/2020 00:30:46'!
 initializeWithAll: children
@@ -480,11 +478,6 @@ withAll: children
 		new
 		initializeWithAll: children! !
 
-!ImplementedSelectorsCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:26'!
-order 
-
-	^ 2! !
-
 !ImplementedSelectorsCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery
 
@@ -496,11 +489,6 @@ processNonEmptySearchQuery: aQuery
 browse: aSelector
 
 	Smalltalk browseAllImplementorsOf: aSelector! !
-
-!ImplementorsCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:39'!
-order 
-
-	^ 4! !
 
 !ImplementorsCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery
@@ -514,11 +502,6 @@ browse: aMethodReference
 	HierarchyBrowserWindow
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
-
-!PackagesCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:44'!
-order 
-
-	^ 5! !
 
 !PackagesCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery 
@@ -538,11 +521,6 @@ browse: aSystemCategoryName
 			BrowserWindow
 				open: newBrowser label: newBrowser defaultBrowserTitle! !
 
-!SendersCatalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 03:19:31'!
-order 
-
-	^ 3! !
-
 !SendersCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery 
 	
@@ -554,11 +532,6 @@ browse: aMethodReference
 	HierarchyBrowserWindow
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
-
-!ToolsCatalog methodsFor: 'accessing' stamp: 'NPM 3/31/2020 19:09:42'!
-order
-	
-	^ 100! !
 
 !ToolsCatalog methodsFor: 'initialization' stamp: 'NPM 4/4/2020 02:04:59'!
 initializeTools
@@ -834,12 +807,33 @@ selectedResultIndex: anIndex
 	selectedResultIndex _ anIndex.
 	self changed: #selectedResultIndex.! !
 
-!Finder class methodsFor: 'instance creation' stamp: 'NPM 3/29/2020 01:58:53'!
-withAllCatalogs
+!Finder class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:35:35'!
+availableCatalogs
+
+	^ OrderedCollection
+		with: Catalog classNames
+		with: Catalog implementedSelectors
+		with: Catalog senders
+		with: Catalog implementors
+		with: Catalog systemCategories
+		with: Catalog tools! !
+
+!Finder class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:35:35'!
+defaultCatalogs
+	
+	| catalogs |
+	catalogs := self availableCatalogs.
+		
+	catalogs addFirst: (Catalog composite: catalogs copy).
+	
+	^ catalogs! !
+
+!Finder class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:33:33'!
+withDefaultCatalogs
 	
 	^ self
 		new
-		initializeWithAll: Catalog all! !
+		initializeWithAll: self defaultCatalogs! !
 
 !SubstringMatcher methodsFor: 'filtering' stamp: 'NPM 4/2/2020 01:25:02'!
 filterCollection
