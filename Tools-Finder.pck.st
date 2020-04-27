@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4103] on 22 April 2020 at 7:38:36 pm'!
+'From Cuis 5.0 [latest update: #4123] on 26 April 2020 at 8:30:27 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 8!
+!provides: 'Tools-Finder' 1 9!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -354,12 +354,23 @@ browseResultAt: aPosition
 			
 			! !
 
+!FinderWindow class methodsFor: 'class initialization' stamp: 'NPM 4/26/2020 17:56:36'!
+initialize
+
+	super initialize.
+	self configureAsClassFinder.! !
+
 !FinderWindow class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:33:33'!
 open
 	
 	^ self
 		open: Finder withDefaultCatalogs
 		label: 'Finder'! !
+
+!FinderWindow class methodsFor: 'as yet unclassified' stamp: 'NPM 4/26/2020 17:59:16'!
+configureAsClassFinder
+	
+	Preferences setClassFinderTo: [ self open ]! !
 
 !Catalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:29:31'!
 processEmptySearchQuery
@@ -1029,3 +1040,4 @@ forEditor: aTextEditor results: aPluggableListMorph model: aFinder
 		initializeFor: aTextEditor
 		results: aPluggableListMorph
 		model: aFinder! !
+FinderWindow initialize!
