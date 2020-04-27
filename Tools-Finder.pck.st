@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4123] on 26 April 2020 at 8:30:27 pm'!
+'From Cuis 5.0 [latest update: #4122] on 26 April 2020 at 10:20:59 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 9!
+!provides: 'Tools-Finder' 1 10!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -797,12 +797,12 @@ selectNextResult
 		ifTrue: [ self selectedResultIndex: 1 ]
 		ifFalse: [ self selectedResultIndex: selectedResultIndex + 1].! !
 
-!Finder methodsFor: 'results' stamp: 'NPM 4/2/2020 01:10:08'!
+!Finder methodsFor: 'results' stamp: 'NPM 4/26/2020 22:20:18'!
 selectPreviousResult
-	
+
 	results ifEmpty: [ ^ self ].
 	
-	selectedResultIndex = 0
+	selectedResultIndex = 1
 		ifTrue: [ self selectedResultIndex: results size ]
 		ifFalse: [ self selectedResultIndex: selectedResultIndex - 1].
 	! !
