@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4122] on 26 April 2020 at 10:20:59 pm'!
+'From Cuis 5.0 [latest update: #4113] on 9 May 2020 at 2:00:20 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 10!
+!provides: 'Tools-Finder' 1 11!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -8,12 +8,22 @@ SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
 
 !classDefinition: #FinderWindow category: #'Tools-Finder-UI'!
 SystemWindow subclass: #FinderWindow
-	instanceVariableNames: 'toolbar searchBox results'
+	instanceVariableNames: 'toolbar searchBar results'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI'!
 !classDefinition: 'FinderWindow class' category: #'Tools-Finder-UI'!
 FinderWindow class
+	instanceVariableNames: ''!
+
+!classDefinition: #SearchBar category: #'Tools-Finder-UI'!
+RectangleLikeMorph subclass: #SearchBar
+	instanceVariableNames: 'layoutMorph searchBox changeHandler keyPressedHandler dateAndTimeOfLastKeyStroke timeToWaitBeforeNotifyingChanges'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-UI'!
+!classDefinition: 'SearchBar class' category: #'Tools-Finder-UI'!
+SearchBar class
 	instanceVariableNames: ''!
 
 !classDefinition: #Catalog category: #'Tools-Finder-Model'!
@@ -138,7 +148,7 @@ CatalogButton class
 
 !classDefinition: #SearchBoxEditor category: #'Tools-Finder-UI-Model'!
 Object subclass: #SearchBoxEditor
-	instanceVariableNames: 'textEditor model results'
+	instanceVariableNames: 'textEditor model keyStrokeHandler'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI-Model'!
@@ -146,6 +156,22 @@ Object subclass: #SearchBoxEditor
 SearchBoxEditor class
 	instanceVariableNames: ''!
 
+
+!SearchBar commentStamp: 'NPM 5/9/2020 13:51:51' prior: 0!
+I am responsible for capturing the query to be performed.
+
+Performance
+=========
+
+To avoid notifying changes every time a key is pressed, I keep track of the date and time of the last keystroke (see #processKeyStroke).
+I use that information in my #stepAt: method to check whether I should notify #query has changed or not, using my #timeToWaitBeforeNotifyingChanges instance variable.
+
+Hacks
+====
+To implement shortcuts, I use SearchBoxEditor (see #initializeSearchBoxEditor and comments in SearchBoxEditor class).
+
+
+!
 
 !ToolsCatalog commentStamp: '<historical>' prior: 0!
 I am a catalog that contains all tools available in the World > Open... menu.
@@ -228,25 +254,24 @@ addToolbarButtonFor: catalog
 
 	^ toolbar addMorph: (self toolbarButtonFor: catalog )! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 3/29/2020 23:52:15'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:51:01'!
 buildLayout
 
 	^ self layoutMorph
 		beColumn
 		addMorph: toolbar fixedHeight: self defaultButtonPaneHeight;
-		addMorph: searchBox fixedHeight: self defaultButtonPaneHeight;
+		addMorph: searchBar fixedHeight: self defaultButtonPaneHeight;
 		addMorphUseAll: results! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 01:41:12'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:50:45'!
 buildMorphicWindow
 	
 	self buildToolbar.
-	self buildSearchBox.
+	self buildSearchBar.
 	self buildResults.
-	self buildLayout.	
-	self installSearchBoxEditor.! !
+	self buildLayout.! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/20/2020 18:19:54'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:34:52'!
 buildResults
 
 	results := (PluggableListMorph
@@ -255,14 +280,16 @@ buildResults
 		indexGetter: #selectedResultIndex
 		indexSetter: #selectedResultIndex:)
 		autoDeselect: false;
-		setProperty: #click:localPosition: toValue: [ :aMouseEvent :localEventPosition | self browseResultAt: localEventPosition ]! !
+		setProperty: #click:localPosition:
+		toValue: [ :aMouseEvent :localEventPosition | self browseResultAt: localEventPosition ]! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 01:40:52'!
-buildSearchBox
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:51:01'!
+buildSearchBar
 	
-	self initializeSearchBox.
-	self registerKeyStrokeHandlerInSearchBox.
-	
+	searchBar := SearchBar
+		onChanged: [ :query | model search: query ]
+		onKeyPressed: [ :event | self processKeyStroke: event ]
+		notifyingChangesAfter: 250 milliSeconds
 	
 	
 	
@@ -281,28 +308,6 @@ buildToolbarButtonsForCatalogs
 
 	^ model catalogsDo: [ :catalog | self addToolbarButtonFor: catalog ]! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 00:25:02'!
-initializeSearchBox
-
-	searchBox := TextModelMorph withText: ''.
-	searchBox askBeforeDiscardingEdits: false.	
-	! !
-
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 01:41:10'!
-installSearchBoxEditor
-
-	^ SearchBoxEditor
-		installOn: searchBox
-		results: results
-		model: model! !
-
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 00:24:54'!
-registerKeyStrokeHandlerInSearchBox
-
-	^ searchBox textMorph
-		setProperty: #'keyStroke:'
-		toValue: [ :event | self search ]! !
-
 !FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 00:48:23'!
 toolbarButtonFor: aCatalog
 
@@ -312,15 +317,10 @@ toolbarButtonFor: aCatalog
 		action: #value
 		label: aCatalog name! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 4/2/2020 00:25:37'!
-unregisterKeyStrokeHandlerFromSearchBox
-
-	^ searchBox textMorph removeProperty: #'keyStroke:'! !
-
-!FinderWindow methodsFor: 'top window' stamp: 'NPM 4/2/2020 00:32:14'!
+!FinderWindow methodsFor: 'top window' stamp: 'NPM 5/9/2020 13:51:01'!
 submorphToFocusKeyboard
 
-	^ searchBox textMorph! !
+	^ searchBar searchField! !
 
 !FinderWindow methodsFor: 'events-old protocol' stamp: 'NPM 4/20/2020 17:06:01'!
 update: aSymbol
@@ -333,17 +333,75 @@ update: aSymbol
 		isCloseEvent: aSymbol
 		ifTrue:  [ ^ self closeBoxHit ].! !
 
-!FinderWindow methodsFor: 'searching' stamp: 'NPM 4/2/2020 00:05:36'!
-search
-	
-	model search: searchBox text asString! !
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:57:03'!
+forwardToResults: aKeyboardEvent
 
-!FinderWindow methodsFor: 'submorphs-add/remove' stamp: 'NPM 4/2/2020 00:25:37'!
-delete
+	^ (results arrowKey: aKeyboardEvent)
+		isNil not
+! !
 
-	self unregisterKeyStrokeHandlerFromSearchBox.
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:46:46'!
+processArrowUpOrDown: aKeyboardEvent 
 	
-	^ super delete.! !
+	aKeyboardEvent isArrowUp 
+		ifTrue: [ 
+			model selectPreviousResult.
+			^ true ].
+		
+	aKeyboardEvent isArrowDown 
+		ifTrue: [ 
+			model selectNextResult.
+			^ true ].
+
+	^ false
+	! !
+
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:47:36'!
+processEscKey: aKeyboardEvent
+
+	(aKeyboardEvent isEsc)
+		ifTrue: [ model close ].
+		
+	^ aKeyboardEvent isEsc! !
+
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:49:02'!
+processKeyStroke: aKeyboardEvent 
+	
+	(self processTab: aKeyboardEvent)
+		ifTrue: [ ^ true ].
+	
+	(self processArrowUpOrDown: aKeyboardEvent)
+		ifTrue: [ ^ true ].
+		
+	(self processReturnKey: aKeyboardEvent)
+		ifTrue: [ ^ true ].
+		
+	(self processEscKey: aKeyboardEvent)
+		ifTrue: [ ^ true ].
+
+	(self forwardToResults: aKeyboardEvent)
+		ifTrue: [ ^ true ].
+		
+	^ false! !
+
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:47:15'!
+processReturnKey: aKeyboardEvent
+
+	(aKeyboardEvent isReturnKey)
+		ifTrue: [ model browseSelectedResult ].
+		
+	^ aKeyboardEvent isReturnKey! !
+
+!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:46:15'!
+processTab: aKeyboardEvent 
+	
+	aKeyboardEvent isTab
+		ifTrue: [ 
+			aKeyboardEvent shiftPressed
+				ifTrue: [ model selectPreviousCatalog ]
+				ifFalse: [ model selectNextCatalog ]].
+	
+	^ aKeyboardEvent isTab! !
 
 !FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
 browseResultAt: aPosition 
@@ -371,6 +429,129 @@ open
 configureAsClassFinder
 	
 	Preferences setClassFinderTo: [ self open ]! !
+
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:28:29'!
+notifyQueryChanged
+
+	^ changeHandler value: self query! !
+
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:23:26'!
+processKeyStroke
+	
+	dateAndTimeOfLastKeyStroke  := DateAndTime now.
+	
+	self startStepping! !
+
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:06:40'!
+registerKeyStrokeHandler
+
+	^ searchBox textMorph
+		setProperty: #'keyStroke:'
+		toValue: [ :event | self processKeyStroke ]! !
+
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:04:54'!
+unregisterKeyStrokeHandler
+
+	searchBox textMorph
+		removeProperty: #'keyStroke:'! !
+
+!SearchBar methodsFor: 'initialization' stamp: 'NPM 5/9/2020 13:16:37'!
+initializeHandlingChangesWith: aChangeHandler handlingKeysPressedWith: aKeyPressedHandler notifyingChangesAfter: anAmountOfTime  
+	
+	changeHandler := aChangeHandler.
+	keyPressedHandler := aKeyPressedHandler.
+	timeToWaitBeforeNotifyingChanges := anAmountOfTime.
+	
+	self initializeLayout.
+	self initializeSearchBox.
+	self initializeSearchBoxEditor.
+	self registerKeyStrokeHandler.! !
+
+!SearchBar methodsFor: 'initialization' stamp: 'NPM 5/3/2020 20:24:51'!
+initializeLayout
+
+	layoutMorph := LayoutMorph newColumn.
+	
+	self addMorph: layoutMorph.! !
+
+!SearchBar methodsFor: 'initialization' stamp: 'NPM 5/3/2020 19:45:38'!
+initializeSearchBox
+
+	searchBox := (TextModelMorph withText: '').
+	searchBox askBeforeDiscardingEdits: false.
+	
+	layoutMorph addMorphUseAll: searchBox.! !
+
+!SearchBar methodsFor: 'initialization' stamp: 'NPM 5/3/2020 21:02:26'!
+initializeSearchBoxEditor
+	
+	^ SearchBoxEditor
+		installOn: searchBox
+		handlingKeyStrokesWith: keyPressedHandler
+		! !
+
+!SearchBar methodsFor: 'accessing' stamp: 'NPM 5/3/2020 20:22:39'!
+query
+	
+	^ searchBox text asString! !
+
+!SearchBar methodsFor: 'accessing' stamp: 'NPM 5/3/2020 19:42:44'!
+searchField
+	
+	^ searchBox textMorph! !
+
+!SearchBar methodsFor: 'accessing' stamp: 'NPM 5/9/2020 13:11:44'!
+timeSinceLastKeyStroke
+
+	^ DateAndTime now - dateAndTimeOfLastKeyStroke! !
+
+!SearchBar methodsFor: 'submorphs-add/remove' stamp: 'NPM 5/9/2020 13:04:54'!
+delete
+
+	self unregisterKeyStrokeHandler.
+	
+	^ super delete.! !
+
+!SearchBar methodsFor: 'layout' stamp: 'NPM 5/3/2020 20:25:01'!
+layoutSubmorphs
+	
+	layoutMorph
+		morphPosition: 0@0
+		extent: self morphExtent.
+	
+	layoutNeeded _ false! !
+
+!SearchBar methodsFor: 'stepping' stamp: 'NPM 5/9/2020 13:28:43'!
+stepAt: millisecondSinceLast
+
+	self shouldNotifyQueryChanged
+		ifTrue: [
+			self stopStepping.
+			self notifyQueryChanged ]
+	
+	
+
+	
+	! !
+
+!SearchBar methodsFor: 'testing' stamp: 'NPM 5/9/2020 13:17:30'!
+shouldNotifyQueryChanged
+
+	^ self timeSinceLastKeyStroke >= timeToWaitBeforeNotifyingChanges! !
+
+!SearchBar methodsFor: 'testing' stamp: 'NPM 5/9/2020 13:21:53'!
+stepTime
+
+	^ timeToWaitBeforeNotifyingChanges totalMilliseconds! !
+
+!SearchBar class methodsFor: 'instance creation' stamp: 'NPM 5/9/2020 13:31:18'!
+onChanged: aChangeHandler onKeyPressed: aKeyPressedHandler notifyingChangesAfter: anAmountOfTime  
+	
+	^ self
+		new
+			initializeHandlingChangesWith: aChangeHandler
+			handlingKeysPressedWith: aKeyPressedHandler
+			notifyingChangesAfter: anAmountOfTime! !
 
 !Catalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:29:31'!
 processEmptySearchQuery
@@ -934,110 +1115,53 @@ forwardToEditor: aKeyboardEvent
 
 	textEditor processKeyStroke: aKeyboardEvent! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 01:39:11'!
-forwardToResults: aKeyboardEvent
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 5/3/2020 20:52:59'!
+handleKeyStroke: aKeyboardEvent
 
-	^ (results arrowKey: aKeyboardEvent)
-		isNil not
+	^ keyStrokeHandler value: aKeyboardEvent
 ! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 00:22:12'!
-processArrowUpOrDown: aKeyboardEvent
-
-	aKeyboardEvent isArrowUp 
-		ifTrue: [ 
-			model selectPreviousResult.
-			^ true ].
-		
-	aKeyboardEvent isArrowDown 
-		ifTrue: [ 
-			model selectNextResult.
-			^ true ].
-
-	^ false
-	! !
-
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/20/2020 17:02:53'!
-processEscKey: aKeyboardEvent
-
-	(aKeyboardEvent isEsc)
-		ifTrue: [ model close ].
-		
-	^ aKeyboardEvent isEsc! !
-
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/20/2020 17:01:51'!
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 5/3/2020 20:51:44'!
 processKeyStroke: aKeyboardEvent
 
-	(self processTab: aKeyboardEvent)
-		ifTrue: [ ^ self ].
-	
-	(self processArrowUpOrDown: aKeyboardEvent)
-		ifTrue: [ ^ self ].
-		
-	(self processReturnKey: aKeyboardEvent)
-		ifTrue: [ ^ self ].
-		
-	(self processEscKey: aKeyboardEvent)
-		ifTrue: [ ^ self ].
-
-	(self forwardToResults: aKeyboardEvent)
+	(self handleKeyStroke: aKeyboardEvent)
 		ifTrue: [ ^ self ].
 	
 	self forwardToEditor: aKeyboardEvent! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 00:23:36'!
-processReturnKey: aKeyboardEvent
-
-	(aKeyboardEvent isReturnKey)
-		ifTrue: [ model browseSelectedResult ].
-		
-	^ aKeyboardEvent isReturnKey! !
-
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 00:16:32'!
-processTab: aKeyboardEvent
-	
-	aKeyboardEvent isTab
-		ifTrue: [ 
-			aKeyboardEvent shiftPressed
-				ifTrue: [ model selectPreviousCatalog ]
-				ifFalse: [ model selectNextCatalog ]].
-	
-	^ aKeyboardEvent isTab! !
-
-!SearchBoxEditor methodsFor: 'initialization' stamp: 'NPM 4/2/2020 01:34:54'!
-initializeFor: aTextEditor results: aPluggableListMorph model: aFinder
+!SearchBoxEditor methodsFor: 'initialization' stamp: 'NPM 5/3/2020 20:53:48'!
+initializeFor: aTextEditor handlingKeyStrokesWith: aKeyStrokeHandler 
 
 	textEditor := aTextEditor.
-	results := aPluggableListMorph.
-	model := aFinder.! !
+	keyStrokeHandler := aKeyStrokeHandler.! !
 
 !SearchBoxEditor methodsFor: 'error handling' stamp: 'NPM 4/2/2020 00:39:43'!
 doesNotUnderstand: aMessage
 
 	^ aMessage sendTo: textEditor! !
 
-!SearchBoxEditor class methodsFor: 'installing' stamp: 'NPM 4/2/2020 01:36:04'!
-installOn: aTextModelMorph results: aPluggableListMorph model: aFinder 
+!SearchBoxEditor class methodsFor: 'installing' stamp: 'NPM 5/3/2020 20:55:26'!
+installOn: aTextModelMorph handlingKeyStrokesWith: aKeyStrokeHandler  
 	
 	| newEditor textMorph |
 	textMorph _ aTextModelMorph textMorph.
 	
 	newEditor _ self
 		forEditor: textMorph editor
-		results: aPluggableListMorph
-		model: aFinder.
+		handlingKeyStrokesWith: aKeyStrokeHandler
+		.
 	
 	textMorph
 		instVarNamed: #editor
 		put: newEditor.
 	! !
 
-!SearchBoxEditor class methodsFor: 'instance creation' stamp: 'NPM 4/2/2020 01:36:04'!
-forEditor: aTextEditor results: aPluggableListMorph model: aFinder 
+!SearchBoxEditor class methodsFor: 'instance creation' stamp: 'NPM 5/3/2020 20:55:32'!
+forEditor: aTextEditor handlingKeyStrokesWith: aKeyStrokeHandler  
 	
 	^ self
 		new
 		initializeFor: aTextEditor
-		results: aPluggableListMorph
-		model: aFinder! !
+		handlingKeyStrokesWith: aKeyStrokeHandler
+		! !
 FinderWindow initialize!
