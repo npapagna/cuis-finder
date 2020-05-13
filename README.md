@@ -2,7 +2,7 @@
 
 ## Description
 
-Finder is a system-wide search tool.
+Finder is a system-wide search tool for [Cuis Smalltalk](https://github.com/Cuis-Smalltalk/Cuis-Smalltalk-Dev).
 
 You can use it to search for classes, methods, senders, implementors, system categories... you name it!
 
