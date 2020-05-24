@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4113] on 9 May 2020 at 2:00:20 pm'!
+'From Cuis 5.0 [latest update: #4137] on 24 May 2020 at 2:16:15 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 11!
+!provides: 'Tools-Finder' 1 12!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -68,7 +68,7 @@ ImplementedSelectorsCatalog class
 
 !classDefinition: #ImplementorsCatalog category: #'Tools-Finder-Model'!
 Catalog subclass: #ImplementorsCatalog
-	instanceVariableNames: ''
+	instanceVariableNames: 'resultsSorter'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
@@ -126,9 +126,59 @@ Object subclass: #Finder
 Finder class
 	instanceVariableNames: ''!
 
+!classDefinition: #ResultsSorter category: #'Tools-Finder-Model'!
+Object subclass: #ResultsSorter
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'ResultsSorter class' category: #'Tools-Finder-Model'!
+ResultsSorter class
+	instanceVariableNames: ''!
+
+!classDefinition: #AlphabeticalResultsSorter category: #'Tools-Finder-Model'!
+ResultsSorter subclass: #AlphabeticalResultsSorter
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'AlphabeticalResultsSorter class' category: #'Tools-Finder-Model'!
+AlphabeticalResultsSorter class
+	instanceVariableNames: ''!
+
+!classDefinition: #SelectorSizeResultsSorter category: #'Tools-Finder-Model'!
+ResultsSorter subclass: #SelectorSizeResultsSorter
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'SelectorSizeResultsSorter class' category: #'Tools-Finder-Model'!
+SelectorSizeResultsSorter class
+	instanceVariableNames: ''!
+
+!classDefinition: #SequentialResultsSorter category: #'Tools-Finder-Model'!
+ResultsSorter subclass: #SequentialResultsSorter
+	instanceVariableNames: 'renameMe1 resultsSorters'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'SequentialResultsSorter class' category: #'Tools-Finder-Model'!
+SequentialResultsSorter class
+	instanceVariableNames: ''!
+
+!classDefinition: #SizeResultsSorter category: #'Tools-Finder-Model'!
+ResultsSorter subclass: #SizeResultsSorter
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'SizeResultsSorter class' category: #'Tools-Finder-Model'!
+SizeResultsSorter class
+	instanceVariableNames: ''!
+
 !classDefinition: #SubstringMatcher category: #'Tools-Finder-Model'!
 Object subclass: #SubstringMatcher
-	instanceVariableNames: 'collection substring'
+	instanceVariableNames: 'collection substring resultsSorter'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
@@ -333,6 +383,15 @@ update: aSymbol
 		isCloseEvent: aSymbol
 		ifTrue:  [ ^ self closeBoxHit ].! !
 
+!FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
+browseResultAt: aPosition 
+	
+	model
+		selectedResultIndex: (results rowAtLocation: aPosition);
+		browseSelectedResult
+			
+			! !
+
 !FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:57:03'!
 forwardToResults: aKeyboardEvent
 
@@ -402,15 +461,6 @@ processTab: aKeyboardEvent
 				ifFalse: [ model selectNextCatalog ]].
 	
 	^ aKeyboardEvent isTab! !
-
-!FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
-browseResultAt: aPosition 
-	
-	model
-		selectedResultIndex: (results rowAtLocation: aPosition);
-		browseSelectedResult
-			
-			! !
 
 !FinderWindow class methodsFor: 'class initialization' stamp: 'NPM 4/26/2020 17:56:36'!
 initialize
@@ -682,11 +732,18 @@ browse: aSelector
 
 	Smalltalk browseAllImplementorsOf: aSelector! !
 
-!ImplementorsCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
+!ImplementorsCatalog methodsFor: 'searching' stamp: 'NPM 5/24/2020 13:40:14'!
 processNonEmptySearchQuery: aQuery
 
-	^ Smalltalk
-		allImplementorsOf: aQuery asString asSymbol! !
+	| implementors |
+	implementors _ OrderedCollection new.
+	
+	Smalltalk allBehaviorsDo: [ :class | 
+		class selectors
+			select: [ :selector | selector includesSubstring: aQuery caseSensitive: false ]
+			thenDo: [ :selector | implementors add: (MethodReference class: class selector: selector) ] ].
+		
+	^ resultsSorter value: implementors! !
 
 !ImplementorsCatalog methodsFor: 'browsing' stamp: 'NPM 4/2/2020 02:25:34'!
 browse: aMethodReference 
@@ -694,6 +751,13 @@ browse: aMethodReference
 	HierarchyBrowserWindow
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
+
+!ImplementorsCatalog methodsFor: 'as yet unclassified' stamp: 'NPM 5/24/2020 13:49:04'!
+initialize
+
+	super initialize.
+	
+	resultsSorter := ResultsSorter alphabetically, ResultsSorter bySelectorSize ! !
 
 !PackagesCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery 
@@ -918,14 +982,14 @@ initializeEventNames
 	browseSelectedResultEvent := #browseSelectedResult.
 	closeEvent := #close.! !
 
-!Finder methodsFor: 'initialization' stamp: 'NPM 4/2/2020 02:33:01'!
+!Finder methodsFor: 'initialization' stamp: 'NPM 5/24/2020 13:27:54'!
 initializeResults
 	
 	currentQuery := ''.
 	results := OrderedCollection new.
 	selectedResultIndex := 0.! !
 
-!Finder methodsFor: 'initialization' stamp: 'NPM 4/2/2020 02:33:01'!
+!Finder methodsFor: 'initialization' stamp: 'NPM 5/24/2020 13:26:37'!
 initializeWithAll: aCollectionOfCatalogs
 
 	super initialize.
@@ -1027,34 +1091,81 @@ withDefaultCatalogs
 		new
 		initializeWithAll: self defaultCatalogs! !
 
+!ResultsSorter methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 14:02:25'!
+value: results
+	
+	self subclassResponsibility! !
+
+!ResultsSorter methodsFor: 'combining' stamp: 'NPM 5/24/2020 14:11:31'!
+, other
+	
+	^ SequentialResultsSorter with: self with: other! !
+
+!ResultsSorter class methodsFor: 'known instances' stamp: 'NPM 5/24/2020 13:40:30'!
+alphabetically
+	
+	^ AlphabeticalResultsSorter new! !
+
+!ResultsSorter class methodsFor: 'known instances' stamp: 'NPM 5/24/2020 14:09:38'!
+bySelectorSize
+	
+	^ SelectorSizeResultsSorter new! !
+
+!ResultsSorter class methodsFor: 'known instances' stamp: 'NPM 5/24/2020 14:09:28'!
+bySize
+	
+	^ SizeResultsSorter new! !
+
+!AlphabeticalResultsSorter methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 13:46:23'!
+value: results
+
+	^ results sort: [ :result :otherResult | result <= otherResult ]! !
+
+!SelectorSizeResultsSorter methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 14:09:59'!
+value: results
+
+	^ results sort: [ :result :otherResult | result selector size <= otherResult selector size ]! !
+
+!SequentialResultsSorter methodsFor: 'initialization' stamp: 'NPM 5/24/2020 14:03:38'!
+initializeWithAll: aCollectionOfResultsSorters 
+	
+	resultsSorters := aCollectionOfResultsSorters.! !
+
+!SequentialResultsSorter methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 14:03:21'!
+value: results
+	
+	^ resultsSorters
+		inject: results
+		into: [ :partiallySortedResults :resultsSorter | resultsSorter value: partiallySortedResults ]! !
+
+!SequentialResultsSorter class methodsFor: 'instance creation' stamp: 'NPM 5/24/2020 13:43:10'!
+with: firstResultsSorter with: secondResultsSorter 
+	
+	^ self
+		new
+		initializeWithAll: (Array with: firstResultsSorter with: secondResultsSorter)! !
+
+!SizeResultsSorter methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 14:08:43'!
+value: results
+
+	^ results sort: [ :result :otherResult | result size <= otherResult size ]! !
+
 !SubstringMatcher methodsFor: 'filtering' stamp: 'NPM 4/2/2020 01:25:02'!
 filterCollection
 
 	^ collection select: [ :item | item includesSubstring: substring caseSensitive: false ]! !
 
-!SubstringMatcher methodsFor: 'sorting' stamp: 'NPM 4/2/2020 01:28:01'!
-sortAlphabetically
-	
-	^ [ :result :otherResult | result <= otherResult ]! !
-
-!SubstringMatcher methodsFor: 'sorting' stamp: 'NPM 4/2/2020 01:28:19'!
-sortByLength
-	
-	^ [ :result :otherResult | result size <= otherResult size ]! !
-
-!SubstringMatcher methodsFor: 'evaluating' stamp: 'NPM 4/2/2020 01:27:28'!
+!SubstringMatcher methodsFor: 'evaluating' stamp: 'NPM 5/24/2020 13:59:04'!
 value
 
-	^ (self filterCollection)
-		asOrderedCollection
-		sort: self sortAlphabetically;
-		sort: self sortByLength! !
+	^ resultsSorter value: (self filterCollection asOrderedCollection)! !
 
-!SubstringMatcher methodsFor: 'initialization' stamp: 'NPM 4/2/2020 01:25:02'!
+!SubstringMatcher methodsFor: 'initialization' stamp: 'NPM 5/24/2020 13:57:53'!
 initializeFiltering: aCollection with: aSubstring 
 	
 	collection := aCollection.
-	substring := aSubstring.! !
+	substring := aSubstring.
+	resultsSorter := ResultsSorter alphabetically, ResultsSorter bySize.! !
 
 !SubstringMatcher class methodsFor: 'evaluating' stamp: 'NPM 4/2/2020 01:25:22'!
 valueFiltering: aCollection with: aSubstring 
