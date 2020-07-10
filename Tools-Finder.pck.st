@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4137] on 24 May 2020 at 2:16:15 pm'!
+'From Cuis 5.0 [latest update: #4122] on 10 July 2020 at 8:30:49 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 12!
+!provides: 'Tools-Finder' 1 13!
 SystemOrganization addCategory: #'Tools-Finder-Model'!
 SystemOrganization addCategory: #'Tools-Finder-UI'!
 SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
@@ -383,15 +383,6 @@ update: aSymbol
 		isCloseEvent: aSymbol
 		ifTrue:  [ ^ self closeBoxHit ].! !
 
-!FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
-browseResultAt: aPosition 
-	
-	model
-		selectedResultIndex: (results rowAtLocation: aPosition);
-		browseSelectedResult
-			
-			! !
-
 !FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:57:03'!
 forwardToResults: aKeyboardEvent
 
@@ -443,11 +434,13 @@ processKeyStroke: aKeyboardEvent
 		
 	^ false! !
 
-!FinderWindow methodsFor: 'shortcuts' stamp: 'NPM 5/3/2020 20:47:15'!
+!FinderWindow methodsFor: 'shortcuts' stamp: 'HAW 6/30/2020 09:31:42'!
 processReturnKey: aKeyboardEvent
 
 	(aKeyboardEvent isReturnKey)
-		ifTrue: [ model browseSelectedResult ].
+		ifTrue: [ 
+			searchBar notifyQueryChanged.
+			model browseSelectedResult ].
 		
 	^ aKeyboardEvent isReturnKey! !
 
@@ -461,6 +454,15 @@ processTab: aKeyboardEvent
 				ifFalse: [ model selectNextCatalog ]].
 	
 	^ aKeyboardEvent isTab! !
+
+!FinderWindow methodsFor: 'as yet unclassified' stamp: 'NPM 4/20/2020 18:20:33'!
+browseResultAt: aPosition 
+	
+	model
+		selectedResultIndex: (results rowAtLocation: aPosition);
+		browseSelectedResult
+			
+			! !
 
 !FinderWindow class methodsFor: 'class initialization' stamp: 'NPM 4/26/2020 17:56:36'!
 initialize
@@ -480,9 +482,10 @@ configureAsClassFinder
 	
 	Preferences setClassFinderTo: [ self open ]! !
 
-!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:28:29'!
+!SearchBar methodsFor: 'key stroke handling' stamp: 'HAW 6/30/2020 09:31:20'!
 notifyQueryChanged
 
+	self stopStepping.
 	^ changeHandler value: self query! !
 
 !SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:23:26'!
@@ -571,13 +574,11 @@ layoutSubmorphs
 	
 	layoutNeeded _ false! !
 
-!SearchBar methodsFor: 'stepping' stamp: 'NPM 5/9/2020 13:28:43'!
+!SearchBar methodsFor: 'stepping' stamp: 'HAW 6/30/2020 09:31:12'!
 stepAt: millisecondSinceLast
 
 	self shouldNotifyQueryChanged
-		ifTrue: [
-			self stopStepping.
-			self notifyQueryChanged ]
+		ifTrue: [ self notifyQueryChanged ]
 	
 	
 
@@ -1016,10 +1017,13 @@ isSelectedCatalogChange: anEvent ifTrue: aBlock
 	anEvent = selectedCatalogChangeEvent
 		ifTrue: aBlock! !
 
-!Finder methodsFor: 'results' stamp: 'NPM 4/2/2020 02:24:59'!
+!Finder methodsFor: 'results' stamp: 'HAW 6/30/2020 09:32:42'!
 browseSelectedResult
 	
-	selectedCatalog browse: (results at: selectedResultIndex).
+	| selected |
+	
+	selected := results at: selectedResultIndex ifAbsent: [^self].
+	selectedCatalog browse: selected.
 	
 	self changed: browseSelectedResultEvent! !
 
