@@ -1,208 +1,209 @@
-'From Cuis 5.0 [latest update: #4122] on 10 July 2020 at 8:30:49 pm'!
+'From Cuis 5.0 [latest update: #4526] on 25 January 2021 at 9:37:00 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 13!
-SystemOrganization addCategory: #'Tools-Finder-Model'!
-SystemOrganization addCategory: #'Tools-Finder-UI'!
-SystemOrganization addCategory: #'Tools-Finder-UI-Model'!
+!provides: 'Tools-Finder' 1 15!
+!requires: 'Cuis-Base' 50 4526 nil!
+SystemOrganization addCategory: 'Tools-Finder-Model'!
+SystemOrganization addCategory: 'Tools-Finder-UI'!
+SystemOrganization addCategory: 'Tools-Finder-UI-Model'!
 
 
-!classDefinition: #FinderWindow category: #'Tools-Finder-UI'!
+!classDefinition: #FinderWindow category: 'Tools-Finder-UI'!
 SystemWindow subclass: #FinderWindow
 	instanceVariableNames: 'toolbar searchBar results'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI'!
-!classDefinition: 'FinderWindow class' category: #'Tools-Finder-UI'!
+!classDefinition: 'FinderWindow class' category: 'Tools-Finder-UI'!
 FinderWindow class
 	instanceVariableNames: ''!
 
-!classDefinition: #SearchBar category: #'Tools-Finder-UI'!
-RectangleLikeMorph subclass: #SearchBar
+!classDefinition: #SearchBar category: 'Tools-Finder-UI'!
+WidgetMorph subclass: #SearchBar
 	instanceVariableNames: 'layoutMorph searchBox changeHandler keyPressedHandler dateAndTimeOfLastKeyStroke timeToWaitBeforeNotifyingChanges'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI'!
-!classDefinition: 'SearchBar class' category: #'Tools-Finder-UI'!
+!classDefinition: 'SearchBar class' category: 'Tools-Finder-UI'!
 SearchBar class
 	instanceVariableNames: ''!
 
-!classDefinition: #Catalog category: #'Tools-Finder-Model'!
+!classDefinition: #Catalog category: 'Tools-Finder-Model'!
 Object subclass: #Catalog
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'Catalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'Catalog class' category: 'Tools-Finder-Model'!
 Catalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #ClassNamesCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #ClassNamesCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #ClassNamesCatalog
 	instanceVariableNames: 'results selectedResultIndex'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'ClassNamesCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'ClassNamesCatalog class' category: 'Tools-Finder-Model'!
 ClassNamesCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #CompositeCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #CompositeCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #CompositeCatalog
 	instanceVariableNames: 'catalogs'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'CompositeCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'CompositeCatalog class' category: 'Tools-Finder-Model'!
 CompositeCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #ImplementedSelectorsCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #ImplementedSelectorsCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #ImplementedSelectorsCatalog
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'ImplementedSelectorsCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'ImplementedSelectorsCatalog class' category: 'Tools-Finder-Model'!
 ImplementedSelectorsCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #ImplementorsCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #ImplementorsCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #ImplementorsCatalog
 	instanceVariableNames: 'resultsSorter'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'ImplementorsCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'ImplementorsCatalog class' category: 'Tools-Finder-Model'!
 ImplementorsCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #PackagesCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #PackagesCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #PackagesCatalog
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'PackagesCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'PackagesCatalog class' category: 'Tools-Finder-Model'!
 PackagesCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #SendersCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #SendersCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #SendersCatalog
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'SendersCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'SendersCatalog class' category: 'Tools-Finder-Model'!
 SendersCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #ToolsCatalog category: #'Tools-Finder-Model'!
+!classDefinition: #ToolsCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #ToolsCatalog
 	instanceVariableNames: 'tools implementorsCatalog'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'ToolsCatalog class' category: #'Tools-Finder-Model'!
+!classDefinition: 'ToolsCatalog class' category: 'Tools-Finder-Model'!
 ToolsCatalog class
 	instanceVariableNames: ''!
 
-!classDefinition: #CompositeCatalogResult category: #'Tools-Finder-Model'!
+!classDefinition: #CompositeCatalogResult category: 'Tools-Finder-Model'!
 Object subclass: #CompositeCatalogResult
 	instanceVariableNames: 'catalog result'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'CompositeCatalogResult class' category: #'Tools-Finder-Model'!
+!classDefinition: 'CompositeCatalogResult class' category: 'Tools-Finder-Model'!
 CompositeCatalogResult class
 	instanceVariableNames: ''!
 
-!classDefinition: #Finder category: #'Tools-Finder-Model'!
+!classDefinition: #Finder category: 'Tools-Finder-Model'!
 Object subclass: #Finder
 	instanceVariableNames: 'results selectedResultIndex selectedCatalog catalogs currentQuery changeSelectedCatalogSelectorPrefix isSelectedCatalogSelectorPrefix selectedCatalogChangeEvent browseSelectedResultEvent closeEvent'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'Finder class' category: #'Tools-Finder-Model'!
+!classDefinition: 'Finder class' category: 'Tools-Finder-Model'!
 Finder class
 	instanceVariableNames: ''!
 
-!classDefinition: #ResultsSorter category: #'Tools-Finder-Model'!
+!classDefinition: #ResultsSorter category: 'Tools-Finder-Model'!
 Object subclass: #ResultsSorter
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'ResultsSorter class' category: #'Tools-Finder-Model'!
+!classDefinition: 'ResultsSorter class' category: 'Tools-Finder-Model'!
 ResultsSorter class
 	instanceVariableNames: ''!
 
-!classDefinition: #AlphabeticalResultsSorter category: #'Tools-Finder-Model'!
+!classDefinition: #AlphabeticalResultsSorter category: 'Tools-Finder-Model'!
 ResultsSorter subclass: #AlphabeticalResultsSorter
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'AlphabeticalResultsSorter class' category: #'Tools-Finder-Model'!
+!classDefinition: 'AlphabeticalResultsSorter class' category: 'Tools-Finder-Model'!
 AlphabeticalResultsSorter class
 	instanceVariableNames: ''!
 
-!classDefinition: #SelectorSizeResultsSorter category: #'Tools-Finder-Model'!
+!classDefinition: #SelectorSizeResultsSorter category: 'Tools-Finder-Model'!
 ResultsSorter subclass: #SelectorSizeResultsSorter
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'SelectorSizeResultsSorter class' category: #'Tools-Finder-Model'!
+!classDefinition: 'SelectorSizeResultsSorter class' category: 'Tools-Finder-Model'!
 SelectorSizeResultsSorter class
 	instanceVariableNames: ''!
 
-!classDefinition: #SequentialResultsSorter category: #'Tools-Finder-Model'!
+!classDefinition: #SequentialResultsSorter category: 'Tools-Finder-Model'!
 ResultsSorter subclass: #SequentialResultsSorter
 	instanceVariableNames: 'renameMe1 resultsSorters'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'SequentialResultsSorter class' category: #'Tools-Finder-Model'!
+!classDefinition: 'SequentialResultsSorter class' category: 'Tools-Finder-Model'!
 SequentialResultsSorter class
 	instanceVariableNames: ''!
 
-!classDefinition: #SizeResultsSorter category: #'Tools-Finder-Model'!
+!classDefinition: #SizeResultsSorter category: 'Tools-Finder-Model'!
 ResultsSorter subclass: #SizeResultsSorter
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'SizeResultsSorter class' category: #'Tools-Finder-Model'!
+!classDefinition: 'SizeResultsSorter class' category: 'Tools-Finder-Model'!
 SizeResultsSorter class
 	instanceVariableNames: ''!
 
-!classDefinition: #SubstringMatcher category: #'Tools-Finder-Model'!
+!classDefinition: #SubstringMatcher category: 'Tools-Finder-Model'!
 Object subclass: #SubstringMatcher
 	instanceVariableNames: 'collection substring resultsSorter'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Model'!
-!classDefinition: 'SubstringMatcher class' category: #'Tools-Finder-Model'!
+!classDefinition: 'SubstringMatcher class' category: 'Tools-Finder-Model'!
 SubstringMatcher class
 	instanceVariableNames: ''!
 
-!classDefinition: #CatalogButton category: #'Tools-Finder-UI-Model'!
+!classDefinition: #CatalogButton category: 'Tools-Finder-UI-Model'!
 Object subclass: #CatalogButton
 	instanceVariableNames: 'catalog model'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI-Model'!
-!classDefinition: 'CatalogButton class' category: #'Tools-Finder-UI-Model'!
+!classDefinition: 'CatalogButton class' category: 'Tools-Finder-UI-Model'!
 CatalogButton class
 	instanceVariableNames: ''!
 
-!classDefinition: #SearchBoxEditor category: #'Tools-Finder-UI-Model'!
+!classDefinition: #SearchBoxEditor category: 'Tools-Finder-UI-Model'!
 Object subclass: #SearchBoxEditor
 	instanceVariableNames: 'textEditor model keyStrokeHandler'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-UI-Model'!
-!classDefinition: 'SearchBoxEditor class' category: #'Tools-Finder-UI-Model'!
+!classDefinition: 'SearchBoxEditor class' category: 'Tools-Finder-UI-Model'!
 SearchBoxEditor class
 	instanceVariableNames: ''!
 
@@ -1225,10 +1226,10 @@ for: aCatalog model: aFinder
 		initializeFor: aCatalog
 		model: aFinder ! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 4/2/2020 01:40:07'!
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 1/25/2021 21:33:49'!
 forwardToEditor: aKeyboardEvent
 
-	textEditor processKeyStroke: aKeyboardEvent! !
+	textEditor processKeystrokeEvent: aKeyboardEvent! !
 
 !SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 5/3/2020 20:52:59'!
 handleKeyStroke: aKeyboardEvent
@@ -1236,8 +1237,8 @@ handleKeyStroke: aKeyboardEvent
 	^ keyStrokeHandler value: aKeyboardEvent
 ! !
 
-!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 5/3/2020 20:51:44'!
-processKeyStroke: aKeyboardEvent
+!SearchBoxEditor methodsFor: 'event handling' stamp: 'NPM 1/25/2021 21:33:20'!
+processKeystrokeEvent: aKeyboardEvent
 
 	(self handleKeyStroke: aKeyboardEvent)
 		ifTrue: [ ^ self ].

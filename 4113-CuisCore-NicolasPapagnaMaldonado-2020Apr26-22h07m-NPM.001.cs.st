@@ -5,7 +5,7 @@ setPreference: prefSymbol toValue: aValue category: aCategory balloonHelp: prefe
 	"Set the given preference to the given value, and answer that value"
 	(self
 		preferenceAt: prefSymbol
-		ifAbsent: [ 
+		ifAbsent: [
 			^ self
 				addPreference: prefSymbol
 				category: aCategory
@@ -15,12 +15,12 @@ setPreference: prefSymbol toValue: aValue category: aCategory balloonHelp: prefe
 
 !Preferences class methodsFor: 'tools-finder' stamp: 'NPM 4/26/2020 22:08:46'!
 openClassFinder
-	
+
 	^ (self valueOfFlag: #classFinder) value! !
 
 !Preferences class methodsFor: 'tools-finder' stamp: 'NPM 4/26/2020 22:11:00'!
 setClassFinderTo: aBlock
-	
+
 	self
 		setPreference: #classFinder
 		toValue: aBlock
@@ -39,27 +39,19 @@ addPreference: prefSymbol categories: categoryList default: aValue balloonHelp: 
 
 
 !KeyboardEvent methodsFor: 'dispatching' stamp: 'NPM 4/26/2020 22:07:39'!
-sentTo: aMorph localPosition: positionInAMorph
+sendEventTo: aMorph
 	"Dispatch the receiver into anObject"
 	type == #keystroke ifTrue: [
 		self isFindClassShortcut
-			ifTrue: [ ^ Preferences openClassFinder ].
+			ifTrue: [^ Preferences openClassFinder ].
 		self isCloseWindowShortcut
 			ifTrue: [ ^ self closeCurrentWindowOf: aMorph ].
-		^ aMorph
-			processKeystroke: self
-			localPosition: positionInAMorph ].
+		^ aMorph processKeystroke: self ].
 	type == #keyDown ifTrue: [
-		^ aMorph
-			processKeyDown: self
-			localPosition: positionInAMorph ].
-	type == #keyUp ifTrue: [ 
-		^ aMorph
-			processKeyUp: self
-			localPosition: positionInAMorph ].
-	^ super
-		sentTo: aMorph
-		localPosition: positionInAMorph.! !
+		^ aMorph processKeyDown: self ].
+	type == #keyUp ifTrue: [
+		^ aMorph processKeyUp: self ].
+	^ super sendEventTo: aMorph.! !
 
 
 !Preferences class reorganize!
@@ -88,4 +80,3 @@ sentTo: aMorph localPosition: positionInAMorph
 ('themes' cuisDefaults forMouse forTouch slowMachine smalltalk80)
 ('tools-finder' openClassFinder setClassFinderTo:)
 !
-
