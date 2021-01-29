@@ -15,10 +15,7 @@ Feel free to [submit an issue](https://github.com/npapagna/cuis-finder/issues) t
 
 ## Installing
 
-**Prerequisite**: Finder creates a new preference named `#classFinder`, that allows the user to configure the tool that will be used when pressing the Find Class shortcut (`shift + enter`).  
-As this is a working prototype the new preference does not exist in Cuis's base image, you need to initialize it by filing in [4113-CuisCore-NicolasPapagnaMaldonado-2020Apr26-22h07m-NPM.001.cs.st](4113-CuisCore-NicolasPapagnaMaldonado-2020Apr26-22h07m-NPM.001.cs.st).
-
-Once that change is filed in, just load [Tools-Finder.pck.st](Tools-Finder.pck.st).
+Install the `Tools-Finder.pck.st` package in this repository by dragging and dropping it into your Cuis image, and you'll be good to go.
 
 ## Usage Instructions
 

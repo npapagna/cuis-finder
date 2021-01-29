@@ -1,7 +1,7 @@
-'From Cuis 5.0 [latest update: #4526] on 25 January 2021 at 9:37:00 pm'!
+'From Cuis 5.0 [latest update: #4528] on 29 January 2021 at 5:20:08 pm'!
 'Description '!
-!provides: 'Tools-Finder' 1 15!
-!requires: 'Cuis-Base' 50 4526 nil!
+!provides: 'Tools-Finder' 1 17!
+!requires: 'Cuis-Base' 50 4528 nil!
 SystemOrganization addCategory: 'Tools-Finder-Model'!
 SystemOrganization addCategory: 'Tools-Finder-UI'!
 SystemOrganization addCategory: 'Tools-Finder-UI-Model'!
@@ -478,10 +478,10 @@ open
 		open: Finder withDefaultCatalogs
 		label: 'Finder'! !
 
-!FinderWindow class methodsFor: 'as yet unclassified' stamp: 'NPM 4/26/2020 17:59:16'!
+!FinderWindow class methodsFor: 'preferences' stamp: 'NPM 1/29/2021 17:17:35'!
 configureAsClassFinder
 	
-	Preferences setClassFinderTo: [ self open ]! !
+	Preferences classFinder: [ self open ]! !
 
 !SearchBar methodsFor: 'key stroke handling' stamp: 'HAW 6/30/2020 09:31:20'!
 notifyQueryChanged
