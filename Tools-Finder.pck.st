@@ -1,12 +1,8 @@
-'From Cuis 6.0 [latest update: #5096] on 7 May 2022 at 11:47:20 am'!
-'Description Fixes to make Finder to work with the latest Cuis University version:
+'From Cuis 6.0 [latest update: #5096] on 7 May 2022 at 11:50:44 am'!
+'Description Fixes the way system categories are browsed in PackagesCatalog.
 
-* Change SearchBar superclass from WidgetMorph to BoxedMorph.
-* Chance how the searchBox''s text morph is accessed in SearchBar: from textMorph (deprecated) to innerTextMorph.
-* Fix FinderWindow>>buildResults: the last cascade message (#setProperty:toValue:) was returning the closure passed into the #toValue: keyword instead of returning the PluggableListMorph itself. 
-
-'!
-!provides: 'Tools-Finder' 1 20!
+Uses setSelectedSystemCategory: to change the new browser''s selected system category instead of using #systemCategoryListIndex: (deprecated).'!
+!provides: 'Tools-Finder' 1 21!
 !requires: 'Cuis-Base' 50 4528 nil!
 SystemOrganization addCategory: 'Tools-Finder-Model'!
 SystemOrganization addCategory: 'Tools-Finder-UI'!
@@ -775,16 +771,15 @@ processNonEmptySearchQuery: aQuery
 		valueFiltering: SystemOrganization categories
 		with: aQuery! !
 
-!PackagesCatalog methodsFor: 'browsing' stamp: 'NPM 4/2/2020 02:25:34'!
+!PackagesCatalog methodsFor: 'browsing' stamp: 'NPM 5/7/2022 11:48:02'!
 browse: aSystemCategoryName 
 	
-	
 	| newBrowser |
+	
 	newBrowser _ Browser new.
-			newBrowser systemCategoryListIndex: (newBrowser systemCategoryList indexOf: aSystemCategoryName).
+	newBrowser setSelectedSystemCategory: aSystemCategoryName.
 
-			BrowserWindow
-				open: newBrowser label: newBrowser defaultBrowserTitle! !
+	BrowserWindow open: newBrowser label: newBrowser defaultBrowserTitle! !
 
 !SendersCatalog methodsFor: 'searching' stamp: 'NPM 4/2/2020 02:30:48'!
 processNonEmptySearchQuery: aQuery 
