@@ -1,6 +1,12 @@
-'From Cuis 5.0 [latest update: #4528] on 29 January 2021 at 5:20:08 pm'!
-'Description '!
-!provides: 'Tools-Finder' 1 17!
+'From Cuis 6.0 [latest update: #5096] on 7 May 2022 at 11:47:20 am'!
+'Description Fixes to make Finder to work with the latest Cuis University version:
+
+* Change SearchBar superclass from WidgetMorph to BoxedMorph.
+* Chance how the searchBox''s text morph is accessed in SearchBar: from textMorph (deprecated) to innerTextMorph.
+* Fix FinderWindow>>buildResults: the last cascade message (#setProperty:toValue:) was returning the closure passed into the #toValue: keyword instead of returning the PluggableListMorph itself. 
+
+'!
+!provides: 'Tools-Finder' 1 20!
 !requires: 'Cuis-Base' 50 4528 nil!
 SystemOrganization addCategory: 'Tools-Finder-Model'!
 SystemOrganization addCategory: 'Tools-Finder-UI'!
@@ -18,7 +24,7 @@ FinderWindow class
 	instanceVariableNames: ''!
 
 !classDefinition: #SearchBar category: 'Tools-Finder-UI'!
-WidgetMorph subclass: #SearchBar
+BoxedMorph subclass: #SearchBar
 	instanceVariableNames: 'layoutMorph searchBox changeHandler keyPressedHandler dateAndTimeOfLastKeyStroke timeToWaitBeforeNotifyingChanges'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -322,7 +328,7 @@ buildMorphicWindow
 	self buildResults.
 	self buildLayout.! !
 
-!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:34:52'!
+!FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/7/2022 11:26:55'!
 buildResults
 
 	results := (PluggableListMorph
@@ -332,7 +338,8 @@ buildResults
 		indexSetter: #selectedResultIndex:)
 		autoDeselect: false;
 		setProperty: #click:localPosition:
-		toValue: [ :aMouseEvent :localEventPosition | self browseResultAt: localEventPosition ]! !
+		toValue: [ :aMouseEvent :localEventPosition | self browseResultAt: localEventPosition ];
+		yourself! !
 
 !FinderWindow methodsFor: 'GUI building' stamp: 'NPM 5/9/2020 13:51:01'!
 buildSearchBar
@@ -496,17 +503,17 @@ processKeyStroke
 	
 	self startStepping! !
 
-!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:06:40'!
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/7/2022 11:23:49'!
 registerKeyStrokeHandler
 
-	^ searchBox textMorph
+	^ searchBox innerTextMorph
 		setProperty: #'keyStroke:'
 		toValue: [ :event | self processKeyStroke ]! !
 
-!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/9/2020 13:04:54'!
+!SearchBar methodsFor: 'key stroke handling' stamp: 'NPM 5/7/2022 11:30:50'!
 unregisterKeyStrokeHandler
 
-	searchBox textMorph
+	searchBox innerTextMorph
 		removeProperty: #'keyStroke:'! !
 
 !SearchBar methodsFor: 'initialization' stamp: 'NPM 5/9/2020 13:16:37'!
@@ -549,10 +556,10 @@ query
 	
 	^ searchBox text asString! !
 
-!SearchBar methodsFor: 'accessing' stamp: 'NPM 5/3/2020 19:42:44'!
+!SearchBar methodsFor: 'accessing' stamp: 'NPM 5/7/2022 11:27:38'!
 searchField
 	
-	^ searchBox textMorph! !
+	^ searchBox innerTextMorph! !
 
 !SearchBar methodsFor: 'accessing' stamp: 'NPM 5/9/2020 13:11:44'!
 timeSinceLastKeyStroke
@@ -754,7 +761,7 @@ browse: aMethodReference
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
 
-!ImplementorsCatalog methodsFor: 'as yet unclassified' stamp: 'NPM 5/24/2020 13:49:04'!
+!ImplementorsCatalog methodsFor: 'initialization' stamp: 'NPM 5/24/2020 13:49:04'!
 initialize
 
 	super initialize.
@@ -1256,11 +1263,11 @@ doesNotUnderstand: aMessage
 
 	^ aMessage sendTo: textEditor! !
 
-!SearchBoxEditor class methodsFor: 'installing' stamp: 'NPM 5/3/2020 20:55:26'!
+!SearchBoxEditor class methodsFor: 'installing' stamp: 'NPM 5/7/2022 11:23:39'!
 installOn: aTextModelMorph handlingKeyStrokesWith: aKeyStrokeHandler  
 	
 	| newEditor textMorph |
-	textMorph _ aTextModelMorph textMorph.
+	textMorph _ aTextModelMorph innerTextMorph.
 	
 	newEditor _ self
 		forEditor: textMorph editor
