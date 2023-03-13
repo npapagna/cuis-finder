@@ -14,6 +14,7 @@ Due to the way [Cuis Smalltalk](https://github.com/Cuis-Smalltalk/Cuis-Smalltalk
 * The PackagesCatalog>>browse: method was changed to use `#setSelectedSystemCategory:` instead of
   `#systemCategoryListIndex:` (deprecated) to set the new browsers's selected system category before opening it. (thanks
   Hernan Wilkinson for submitting the fix)
+* Use `PreferenceSet` protocol to configure `FinderWindow` as the default class finder.
 
 ## [1.17](https://github.com/npapagna/cuis-finder/releases/tag/v1.17) - 2021-01-29
 
