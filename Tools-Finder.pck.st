@@ -1,12 +1,14 @@
-'From Cuis 6.0 [latest update: #5686] on 12 March 2023 at 11:22:20 pm'!
+'From Cuis 6.0 [latest update: #6068] on 6 November 2023 at 9:33:04 am'!
 'Description Fixes the way system categories are browsed in PackagesCatalog.
 
 Uses setSelectedSystemCategory: to change the new browser''s selected system category instead of using #systemCategoryListIndex: (deprecated).'!
-!provides: 'Tools-Finder' 1 22!
+!provides: 'Tools-Finder' 1 25!
 !requires: 'Cuis-Base' 50 4528 nil!
 SystemOrganization addCategory: 'Tools-Finder-Model'!
 SystemOrganization addCategory: 'Tools-Finder-UI'!
 SystemOrganization addCategory: 'Tools-Finder-UI-Model'!
+SystemOrganization addCategory: 'Tools-Finder-NGram'!
+SystemOrganization addCategory: 'Tools-Finder-Indexing'!
 
 
 !classDefinition: #FinderWindow category: 'Tools-Finder-UI'!
@@ -27,6 +29,36 @@ BoxedMorph subclass: #SearchBar
 	category: 'Tools-Finder-UI'!
 !classDefinition: 'SearchBar class' category: 'Tools-Finder-UI'!
 SearchBar class
+	instanceVariableNames: ''!
+
+!classDefinition: #NGramTokenizerTest category: 'Tools-Finder-NGram'!
+TestCase subclass: #NGramTokenizerTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-NGram'!
+!classDefinition: 'NGramTokenizerTest class' category: 'Tools-Finder-NGram'!
+NGramTokenizerTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #InvertedIndexTest category: 'Tools-Finder-Indexing'!
+TestCase subclass: #InvertedIndexTest
+	instanceVariableNames: 'index'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'InvertedIndexTest class' category: 'Tools-Finder-Indexing'!
+InvertedIndexTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SourceCodeIndexTest category: 'Tools-Finder-Indexing'!
+TestCase subclass: #SourceCodeIndexTest
+	instanceVariableNames: 'sourceCodeIndex m1 m2'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'SourceCodeIndexTest class' category: 'Tools-Finder-Indexing'!
+SourceCodeIndexTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #Catalog category: 'Tools-Finder-Model'!
@@ -98,6 +130,16 @@ Catalog subclass: #SendersCatalog
 !classDefinition: 'SendersCatalog class' category: 'Tools-Finder-Model'!
 SendersCatalog class
 	instanceVariableNames: ''!
+
+!classDefinition: #SourceCodeCatalog category: 'Tools-Finder-Model'!
+Catalog subclass: #SourceCodeCatalog
+	instanceVariableNames: 'resultsSorter lastQuery'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'SourceCodeCatalog class' category: 'Tools-Finder-Model'!
+SourceCodeCatalog class
+	instanceVariableNames: 'index'!
 
 !classDefinition: #ToolsCatalog category: 'Tools-Finder-Model'!
 Catalog subclass: #ToolsCatalog
@@ -189,6 +231,16 @@ Object subclass: #SubstringMatcher
 SubstringMatcher class
 	instanceVariableNames: ''!
 
+!classDefinition: #TrigramIndex category: 'Tools-Finder-Model'!
+Object subclass: #TrigramIndex
+	instanceVariableNames: 'trigramTokenizer invertedIndex'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Model'!
+!classDefinition: 'TrigramIndex class' category: 'Tools-Finder-Model'!
+TrigramIndex class
+	instanceVariableNames: ''!
+
 !classDefinition: #CatalogButton category: 'Tools-Finder-UI-Model'!
 Object subclass: #CatalogButton
 	instanceVariableNames: 'catalog model'
@@ -207,6 +259,36 @@ Object subclass: #SearchBoxEditor
 	category: 'Tools-Finder-UI-Model'!
 !classDefinition: 'SearchBoxEditor class' category: 'Tools-Finder-UI-Model'!
 SearchBoxEditor class
+	instanceVariableNames: ''!
+
+!classDefinition: #NGramTokenizer category: 'Tools-Finder-NGram'!
+Object subclass: #NGramTokenizer
+	instanceVariableNames: 'nGramSize'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-NGram'!
+!classDefinition: 'NGramTokenizer class' category: 'Tools-Finder-NGram'!
+NGramTokenizer class
+	instanceVariableNames: ''!
+
+!classDefinition: #InvertedIndex category: 'Tools-Finder-Indexing'!
+Object subclass: #InvertedIndex
+	instanceVariableNames: 'objectsClassifiedByCategory valueCreationBlock'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'InvertedIndex class' category: 'Tools-Finder-Indexing'!
+InvertedIndex class
+	instanceVariableNames: ''!
+
+!classDefinition: #SourceCodeIndex category: 'Tools-Finder-Indexing'!
+Object subclass: #SourceCodeIndex
+	instanceVariableNames: 'tokenizer index sourceCodeCache'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'SourceCodeIndex class' category: 'Tools-Finder-Indexing'!
+SourceCodeIndex class
 	instanceVariableNames: ''!
 
 
@@ -568,6 +650,342 @@ onChanged: aChangeHandler onKeyPressed: aKeyPressedHandler notifyingChangesAfter
 			handlingKeysPressedWith: aKeyPressedHandler
 			notifyingChangesAfter: anAmountOfTime! !
 
+!NGramTokenizerTest methodsFor: 'assertions' stamp: 'NPM 6/19/2023 15:22:52'!
+assertNGramsOfSize: aSize of: aString are: expectedNGrams
+
+	| nGrams tokenizer |
+	tokenizer := NGramTokenizer nGramSize: aSize.
+	
+	nGrams := tokenizer value: aString.
+	
+	self
+		assert: expectedNGrams asArray sort
+		equals: nGrams asArray sort! !
+
+!NGramTokenizerTest methodsFor: 'tests' stamp: 'NPM 7/14/2023 00:15:57'!
+test000_DoesNotReturnNGramsWhenTheStringIsEmpty
+
+	self
+		assertNGramsOfSize: 2
+		of: ''
+		are: {}! !
+
+!NGramTokenizerTest methodsFor: 'tests' stamp: 'NPM 7/14/2023 00:16:44'!
+test001_DoesNotReturnNGramsWhenTheLengthOfTheStringIsLessThanTheNGramSize
+
+	self
+		assertNGramsOfSize: 2
+		of: 'a'
+		are: {}! !
+
+!NGramTokenizerTest methodsFor: 'tests' stamp: 'NPM 7/14/2023 00:17:11'!
+test002_ReturnsAllNGramsWhenTheLengthOfTheStringIsEqualToTheNGramSize
+
+	self
+		assertNGramsOfSize: 2
+		of: 'abc'
+		are: {#ab. #bc}! !
+
+!NGramTokenizerTest methodsFor: 'tests' stamp: 'NPM 7/14/2023 00:18:02'!
+test003_ReturnsAllNGramsWhenTheLengthOfTheStringIsGreaterThanTheNGramSize
+
+	self
+		assertNGramsOfSize: 2
+		of: 'abcd'
+		are: {#ab. #bc. #cd}! !
+
+!NGramTokenizerTest methodsFor: 'tests' stamp: 'NPM 7/14/2023 00:18:24'!
+test004_DoesNotRepeatNGrams
+
+	self
+		assertNGramsOfSize: 2
+		of: 'aaa'
+		are: {#aa}! !
+
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 6/17/2023 17:43:54'!
+assertObjectsClassifiedUnderAll: categories are: expectedObjects 
+	
+	| actualObjects |
+	actualObjects := index classifiedUnderAll: categories.
+	
+	self
+		assert: expectedObjects asSet
+		equals: actualObjects! !
+
+!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 6/17/2023 17:38:04'!
+classify: anObject underAll: categories
+
+	index
+		classify: anObject
+		underAll: categories! !
+
+!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 7/9/2023 16:08:26'!
+remove: anObject  
+	
+	index remove: anObject
+		! !
+
+!InvertedIndexTest methodsFor: 'setUp/tearDown' stamp: 'NPM 6/18/2023 16:04:08'!
+setUp
+
+	super setUp.
+	
+	index := InvertedIndex
+		storingClassifiedObjectsIn: Dictionary new
+		creatingValuesWith: [ Set new ].! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:42'!
+test001_ClassifiesASingleObjectUnderASingleCategory
+
+	self classify: #apple underAll: {#fruits}.
+	
+	self
+		assertObjectsClassifiedUnderAll: {#fruits}
+		are: {#apple}! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:47'!
+test002_ClassifiesMultipleObjectsUnderASingleCategory
+
+	self classify: #apple underAll: {#fruits}.
+	self classify: #orange underAll: {#fruits}.
+	
+	self
+		assertObjectsClassifiedUnderAll: {#fruits}
+		are: {#apple. #orange}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:51'!
+test003_DoesNotReturnObjectsWhenACategoryDoesNotExist
+
+	self
+		assertObjectsClassifiedUnderAll: {#fruits}
+		are: {}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:55'!
+test004_DoesNotReturnObjectsClassifiedUnderADifferentCategory
+
+	self classify: #apple underAll: {#fruits}.
+	self classify: #water underAll: {#drinks}.
+	
+	self
+		assertObjectsClassifiedUnderAll: {#drinks}
+		are: {#water}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:59'!
+test005_ClassifiesMultipleObjectsUnderMultipleCategories
+
+	self classify: #apple underAll: {#fruits. #red. #big}.
+	self classify: #cherry underAll: {#fruits. #red. #small}.
+	
+	self
+		assertObjectsClassifiedUnderAll: {#red. #big}
+		are: {#apple}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:07:02'!
+test006_DoesNotReturnObjectWhenCategoriesAreDisjoint
+
+	self classify: #apple underAll: {#red.}.
+	self classify: #banana underAll: {#yellow}.
+	
+	self
+		assertObjectsClassifiedUnderAll: {#red. #yellow}
+		are: {}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:07:06'!
+test007_DoesNotReturnObjectsWhenACategoriesAreEmpty
+
+	self
+		assertObjectsClassifiedUnderAll: {}
+		are: {}.! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 7/9/2023 16:08:18'!
+test008_RemovesASingleObjectFromASingleCategory
+
+	self classify: #apple underAll: {#fruits. #red}.
+	
+	self remove: #apple .
+	
+	self
+		assertObjectsClassifiedUnderAll: {#fruits}
+		are: {}.
+	self
+		assertObjectsClassifiedUnderAll: {#red}
+		are: {}! !
+
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 7/9/2023 16:10:29'!
+test009_DoesNotRemoveOtherObjectsWhenRemovingOne
+
+	self classify: #apple underAll: {#fruits. #red}.
+	self classify: #cherry underAll: {#fruits. #red}.
+	self classify: #hammer underAll: {#tools}.
+	
+	self remove: #apple .
+	
+	self
+		assertObjectsClassifiedUnderAll: {#fruits}
+		are: {#cherry}.
+	self
+		assertObjectsClassifiedUnderAll: {#red}
+		are: {#cherry}.
+	self
+		assertObjectsClassifiedUnderAll: {#tools}
+		are: {#hammer}! !
+
+!SourceCodeIndexTest methodsFor: 'assertions' stamp: 'NPM 6/20/2023 12:28:33'!
+assertSearchingFor: aQuery caseSensitive: aBoolean returns: expectedCompiledMethods 
+	
+	| actualCompiledMethods |
+	actualCompiledMethods := sourceCodeIndex searchFor: aQuery caseSensitive: aBoolean.
+	
+	self assert: (expectedCompiledMethods includesAllOf: actualCompiledMethods).
+	self assert: expectedCompiledMethods size equals: actualCompiledMethods size.! !
+
+!SourceCodeIndexTest methodsFor: 'excercise' stamp: 'NPM 7/1/2023 16:46:58'!
+addToIndex: aCompiledMethod 
+
+	sourceCodeIndex add: aCompiledMethod.! !
+
+!SourceCodeIndexTest methodsFor: 'excercise' stamp: 'NPM 7/1/2023 17:02:47'!
+removeFromIndex: aCompiledMethod
+	
+	sourceCodeIndex remove: aCompiledMethod! !
+
+!SourceCodeIndexTest methodsFor: 'setUp/tearDown' stamp: 'NPM 6/19/2023 15:44:47'!
+setUp
+
+	super setUp.
+
+	sourceCodeIndex := SourceCodeIndex new.
+	m1 := self class>>#m1.
+	m2 := self class>>#m2.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 6/20/2023 12:05:19'!
+test001_DoesNotReturnResulsWhenTheQueryIsLessThan3CharactersLong
+
+	self
+		assertSearchingFor: ''
+		caseSensitive: true
+		returns: {}.
+	
+	self
+		assertSearchingFor: 'A'
+		caseSensitive: true
+		returns: {}.
+	
+	self
+		assertSearchingFor: 'Ar'
+		caseSensitive: true
+		returns: {}! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:47:45'!
+test002_MatchesTheQueryInTheMiddleOfWords
+	
+	self addToIndex: m1.
+
+	self
+		assertSearchingFor: 'rra'
+		caseSensitive: true
+		returns: {m1}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:47:49'!
+test003_SearchesForResultsIgnoringTheLetterCase
+
+	self addToIndex: m1.
+
+	self
+		assertSearchingFor: 'arr'
+		caseSensitive: false
+		returns: {m1}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:47:52'!
+test004_DoesNotResultResultsTheQueryHasNoMatches
+	
+	self addToIndex: m1.
+
+	self
+		assertSearchingFor: 'foo'
+		caseSensitive: true
+		returns: {}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:47:55'!
+test005_SupportsSearchQueriesLongerThan3Characters
+	
+	self addToIndex: m1.
+
+	self
+		assertSearchingFor: 'Arra'
+		caseSensitive: true
+		returns: {m1}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:46:58'!
+test006_DoesNotReturnResultsWhenTheQueryIsNotContiguousInTheSourceCode
+	
+	self addToIndex: m2.
+
+	self
+		assertSearchingFor: 'abcd'
+		caseSensitive: true
+		returns: {}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/1/2023 16:46:58'!
+test007_IndexesMethodsWithSameSourceCodeKeepingTheirIdentity
+	
+	| m1Copy |
+	m1Copy := m1 copy.
+	self addToIndex: m1.
+	self addToIndex: m1Copy.
+
+	self
+		assertSearchingFor: 'Arr'
+		caseSensitive: true
+		returns: {m1. m1Copy}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/15/2023 16:00:28'!
+test008_CachesTheSourceCodeOfCompiledMethodsWhenIdexingThem
+	
+	self addToIndex: m1.
+	
+	self removeFromIndex: m1.
+
+	self
+		assertSearchingFor: 'Arr'
+		caseSensitive: true
+		returns: {}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/15/2023 16:00:10'!
+test009_RemovesACompiledMethodFromTheIndex
+	
+	self addToIndex: m1.
+	
+	self removeFromIndex: m1.
+
+	self
+		assertSearchingFor: 'Arr'
+		caseSensitive: true
+		returns: {}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests' stamp: 'NPM 7/15/2023 16:00:05'!
+test010_RemovesACompiledMethodSourceFromTheCache
+	
+	self addToIndex: m1.
+	
+	self removeFromIndex: m1.
+
+	self
+		assertSearchingFor: 'Arr'
+		caseSensitive: true
+		returns: {}.! !
+
+!SourceCodeIndexTest methodsFor: 'tests objects' stamp: 'NPM 6/19/2023 15:30:11'!
+m1
+
+	Array! !
+
+!SourceCodeIndexTest methodsFor: 'tests objects' stamp: 'NPM 6/20/2023 00:24:46'!
+m2
+
+	"abc"
+	"bcd"! !
+
 !Catalog methodsFor: 'accessing' stamp: 'NPM 3/28/2020 02:38:49'!
 name
 
@@ -624,6 +1042,11 @@ implementors
 senders
 	
 	^ SendersCatalog create! !
+
+!Catalog class methodsFor: 'known instances' stamp: 'NPM 5/19/2023 16:51:27'!
+sourceCode
+	
+	^ SourceCodeCatalog new! !
 
 !Catalog class methodsFor: 'known instances' stamp: 'NPM 4/22/2020 19:31:51'!
 systemCategories
@@ -787,6 +1210,66 @@ browse: aMethodReference
 	HierarchyBrowserWindow
 		onClass: aMethodReference methodClass
 		selector: aMethodReference selector! !
+
+!SourceCodeCatalog methodsFor: 'accessing' stamp: 'NPM 5/19/2023 16:51:50'!
+name
+	
+	^ 'Source code'! !
+
+!SourceCodeCatalog methodsFor: 'browsing' stamp: 'NPM 7/14/2023 00:14:49'!
+browse: aMethodReference 
+
+	Smalltalk
+		browseMessageList: {aMethodReference}
+		name:  'Methods containing ' , lastQuery
+		autoHighlight: lastQuery
+		allOccurrences: true
+			! !
+
+!SourceCodeCatalog methodsFor: 'initialization' stamp: 'NPM 5/19/2023 17:01:44'!
+initialize
+
+	super initialize.
+	
+	resultsSorter := ResultsSorter alphabetically, ResultsSorter bySelectorSize ! !
+
+!SourceCodeCatalog methodsFor: 'searching' stamp: 'NPM 7/14/2023 00:22:47'!
+methodsWithSourceCodeIncluding: aQuery
+
+	^ (self class index searchFor: aQuery caseSensitive: false)
+		asArray
+		collect: [:compiledMethod | compiledMethod asMethodReference ]! !
+
+!SourceCodeCatalog methodsFor: 'searching' stamp: 'NPM 7/14/2023 00:22:30'!
+processNonEmptySearchQuery: aQuery
+
+	| sortedResults results |
+	
+	results := self methodsWithSourceCodeIncluding: aQuery.
+	sortedResults := resultsSorter value:results.
+	
+	lastQuery := aQuery.
+	
+	^ sortedResults.! !
+
+!SourceCodeCatalog class methodsFor: 'indexing' stamp: 'NPM 7/14/2023 00:23:08'!
+buildIndex
+
+	| newIndex |
+	newIndex := SourceCodeIndex new.
+	
+	CompiledMethod allInstances
+		do: [ :compiledMethod | newIndex add: compiledMethod ]
+		displayingProgress: 'Indexing source code...'.
+		
+	^ newIndex! !
+
+!SourceCodeCatalog class methodsFor: 'indexing' stamp: 'NPM 7/14/2023 00:23:29'!
+index
+
+	index ifNil: [ index := self buildIndex ].
+	
+	^ index! !
 
 !ToolsCatalog methodsFor: 'accessing' stamp: 'NPM 3/31/2020 19:09:53'!
 name
@@ -1070,16 +1553,22 @@ selectedResultIndex: anIndex
 	selectedResultIndex _ anIndex.
 	self changed: #selectedResultIndex.! !
 
-!Finder class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:35:35'!
+!Finder class methodsFor: 'instance creation' stamp: 'NPM 7/1/2023 16:39:30'!
 availableCatalogs
 
-	^ OrderedCollection
+	| catalogs |
+	catalogs := (OrderedCollection
 		with: Catalog classNames
 		with: Catalog implementedSelectors
 		with: Catalog senders
 		with: Catalog implementors
 		with: Catalog systemCategories
-		with: Catalog tools! !
+		with: Catalog tools).
+		
+	catalogs add: Catalog sourceCode.
+	
+	^ catalogs
+		! !
 
 !Finder class methodsFor: 'instance creation' stamp: 'NPM 4/22/2020 19:35:35'!
 defaultCatalogs
@@ -1189,6 +1678,34 @@ forFiltering: aCollection with: aSubstring
 		initializeFiltering: aCollection
 		with: aSubstring ! !
 
+!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:19:10'!
+add: aDocument 
+	
+	invertedIndex
+		classify: aDocument
+		underAll: (trigramTokenizer value: aDocument)! !
+
+!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:18:34'!
+addAll: documents
+
+	documents do: [ :document | self add: document ].! !
+
+!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:20:56'!
+at: aTrigram
+		
+	^ invertedIndex classifiedUnder: aTrigram! !
+
+!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:18:05'!
+initialize
+
+	trigramTokenizer := NGramTokenizer nGramSize: 3.
+	invertedIndex := InvertedIndex storingClassifiedObjectsIn: Dictionary new creatingValuesWith: [ OrderedCollection new ].! !
+
+!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:22:30'!
+search: aQuery
+		
+	^ invertedIndex classifiedUnderAll: (trigramTokenizer value: aQuery)! !
+
 !CatalogButton methodsFor: 'evaluating' stamp: 'NPM 3/29/2020 13:13:43'!
 value
 	
@@ -1282,4 +1799,145 @@ forEditor: aTextEditor handlingKeyStrokesWith: aKeyStrokeHandler
 		initializeFor: aTextEditor
 		handlingKeyStrokesWith: aKeyStrokeHandler
 		! !
+
+!NGramTokenizer methodsFor: 'initialization' stamp: 'NPM 6/19/2023 15:23:37'!
+initializeNGramSize: aQuantity 
+	
+	nGramSize := aQuantity.! !
+
+!NGramTokenizer methodsFor: 'evaluating' stamp: 'NPM 9/14/2023 01:45:23'!
+value: aString 
+	
+	| nGrams |
+	"An IdentitySet is used to speed lookups because set elements are instances of Symbol"
+	nGrams := IdentitySet new.
+	
+	(1 to: aString size - nGramSize + 1) do: [ :nGramIndex | 
+		| nGram |
+		nGram := aString copyFrom: nGramIndex to: nGramIndex + nGramSize -1.
+		nGrams add: (nGram asLowercase asSymbol)
+	].
+	
+	^ nGrams ! !
+
+!NGramTokenizer class methodsFor: 'instance creation' stamp: 'NPM 6/19/2023 15:23:22'!
+nGramSize: numberOfCharacters 
+	
+	^self
+		new
+		initializeNGramSize: numberOfCharacters ! !
+
+!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 6/18/2023 16:02:47'!
+classify: anObject under: aCategory
+
+	| classifiedObjects |
+	
+	classifiedObjects := objectsClassifiedByCategory
+		at: aCategory
+		ifAbsentPut: valueCreationBlock.
+	
+	classifiedObjects add: anObject! !
+
+!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 5/25/2023 15:49:16'!
+classify: anObject underAll: categories 
+	
+	categories do: [ :category | self classify: anObject under: category ]
+	! !
+
+!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 7/9/2023 16:10:57'!
+remove: anObject  
+	
+	objectsClassifiedByCategory
+		keysAndValuesRemove: [ :category :classifiedObjects |
+			classifiedObjects remove: anObject ifAbsent: [ "Do nothing. NPM" ].
+			classifiedObjects isEmpty ]! !
+
+!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 6/18/2023 16:02:47'!
+classifiedUnder: aCategory
+
+	^ objectsClassifiedByCategory
+		at: aCategory
+		ifAbsent: valueCreationBlock! !
+
+!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 6/18/2023 16:02:47'!
+classifiedUnderAll: categories 
+
+	^ categories
+		collect: [ :category | self classifiedUnder: category ]
+		andFold: [ :classifiedObjects :otherClassifiedObjects | classifiedObjects intersection: otherClassifiedObjects ]
+		ifEmpty: valueCreationBlock! !
+
+!InvertedIndex methodsFor: 'initialization' stamp: 'NPM 6/18/2023 16:02:47'!
+initializeStoringClassifiedObjectsIn: aDictionary creatingValuesWith: aBlock
+
+	objectsClassifiedByCategory := aDictionary.
+	valueCreationBlock := aBlock.! !
+
+!InvertedIndex class methodsFor: 'instance creation' stamp: 'NPM 11/6/2023 01:36:43'!
+empty
+	
+	^ self
+		storingClassifiedObjectsIn: Dictionary new
+		creatingValuesWith: [ OrderedCollection new ]! !
+
+!InvertedIndex class methodsFor: 'instance creation' stamp: 'NPM 6/18/2023 16:03:47'!
+storingClassifiedObjectsIn: aDictionary creatingValuesWith: aBlock
+
+	^ self
+		new
+		initializeStoringClassifiedObjectsIn: aDictionary
+		creatingValuesWith: aBlock! !
+
+!SourceCodeIndex methodsFor: 'enumeration' stamp: 'NPM 7/1/2023 16:19:27'!
+searchCandidateResultsFor: aQuery
+	
+	| queryCategories |
+	queryCategories :=  tokenizer value: aQuery.
+	
+	^ index classifiedUnderAll: queryCategories.! !
+
+!SourceCodeIndex methodsFor: 'enumeration' stamp: 'NPM 7/1/2023 16:22:17'!
+searchFor: aQuery caseSensitive: aBoolean  
+	
+	^ (self searchCandidateResultsFor: aQuery)
+		select: [ :compiledMethod | self matches: compiledMethod query: aQuery caseSensitive: aBoolean ].! !
+
+!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 6/29/2023 10:40:01'!
+add: aCompiledMethod
+
+	| sourceCode |
+	sourceCode := aCompiledMethod sourceCode.
+	
+	sourceCodeCache at: aCompiledMethod put: sourceCode.
+	
+	index
+		classify: aCompiledMethod
+		underAll: (tokenizer value: sourceCode)! !
+
+!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 7/15/2023 15:59:33'!
+remove: aCompiledMethod 
+	
+	index remove: aCompiledMethod! !
+
+!SourceCodeIndex methodsFor: 'initialization' stamp: 'NPM 7/1/2023 16:12:17'!
+initialize
+
+	super initialize.
+	
+	tokenizer := NGramTokenizer nGramSize: 3.
+	
+	"An IdentityDictionary is used because keys are instances of CompiledMethod."
+	sourceCodeCache := IdentityDictionary new.
+	
+	index := InvertedIndex
+		storingClassifiedObjectsIn: Dictionary new
+		"An IdentitySet is used because elements are instances of CompiledMethod."
+		creatingValuesWith: [ IdentitySet new ].! !
+
+!SourceCodeIndex methodsFor: 'testing' stamp: 'NPM 7/1/2023 16:21:26'!
+matches: aCompiledMethod query: aQuery caseSensitive: aBoolean  
+	
+	^ (sourceCodeCache at: aCompiledMethod)
+		includesSubstring: aQuery
+		caseSensitive: aBoolean! !
 FinderWindow initialize!
