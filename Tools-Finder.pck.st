@@ -1,8 +1,8 @@
-'From Cuis 6.0 [latest update: #6068] on 6 November 2023 at 9:33:04 am'!
+'From Cuis 6.0 [latest update: #6068] on 2 December 2023 at 12:52:46 am'!
 'Description Fixes the way system categories are browsed in PackagesCatalog.
 
 Uses setSelectedSystemCategory: to change the new browser''s selected system category instead of using #systemCategoryListIndex: (deprecated).'!
-!provides: 'Tools-Finder' 1 25!
+!provides: 'Tools-Finder' 1 26!
 !requires: 'Cuis-Base' 50 4528 nil!
 SystemOrganization addCategory: 'Tools-Finder-Model'!
 SystemOrganization addCategory: 'Tools-Finder-UI'!
@@ -49,6 +49,16 @@ TestCase subclass: #InvertedIndexTest
 	category: 'Tools-Finder-Indexing'!
 !classDefinition: 'InvertedIndexTest class' category: 'Tools-Finder-Indexing'!
 InvertedIndexTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #NGramIndexTest category: 'Tools-Finder-Indexing'!
+TestCase subclass: #NGramIndexTest
+	instanceVariableNames: 'trigramIndex'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'NGramIndexTest class' category: 'Tools-Finder-Indexing'!
+NGramIndexTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SourceCodeIndexTest category: 'Tools-Finder-Indexing'!
@@ -231,16 +241,6 @@ Object subclass: #SubstringMatcher
 SubstringMatcher class
 	instanceVariableNames: ''!
 
-!classDefinition: #TrigramIndex category: 'Tools-Finder-Model'!
-Object subclass: #TrigramIndex
-	instanceVariableNames: 'trigramTokenizer invertedIndex'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Tools-Finder-Model'!
-!classDefinition: 'TrigramIndex class' category: 'Tools-Finder-Model'!
-TrigramIndex class
-	instanceVariableNames: ''!
-
 !classDefinition: #CatalogButton category: 'Tools-Finder-UI-Model'!
 Object subclass: #CatalogButton
 	instanceVariableNames: 'catalog model'
@@ -273,7 +273,7 @@ NGramTokenizer class
 
 !classDefinition: #InvertedIndex category: 'Tools-Finder-Indexing'!
 Object subclass: #InvertedIndex
-	instanceVariableNames: 'objectsClassifiedByCategory valueCreationBlock'
+	instanceVariableNames: 'documentsByTerms documentsCollectionCreationBlock'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Indexing'!
@@ -281,15 +281,25 @@ Object subclass: #InvertedIndex
 InvertedIndex class
 	instanceVariableNames: ''!
 
+!classDefinition: #NGramIndex category: 'Tools-Finder-Indexing'!
+Object subclass: #NGramIndex
+	instanceVariableNames: 'nGramTokenizer invertedIndex'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-Finder-Indexing'!
+!classDefinition: 'NGramIndex class' category: 'Tools-Finder-Indexing'!
+NGramIndex class
+	instanceVariableNames: ''!
+
 !classDefinition: #SourceCodeIndex category: 'Tools-Finder-Indexing'!
 Object subclass: #SourceCodeIndex
-	instanceVariableNames: 'tokenizer index sourceCodeCache'
+	instanceVariableNames: 'tokenizer index sourceCodeCache trigramIndex'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-Finder-Indexing'!
 !classDefinition: 'SourceCodeIndex class' category: 'Tools-Finder-Indexing'!
 SourceCodeIndex class
-	instanceVariableNames: ''!
+	instanceVariableNames: 'trigramIndex'!
 
 
 !SearchBar commentStamp: 'NPM 5/9/2020 13:51:51' prior: 0!
@@ -702,133 +712,225 @@ test004_DoesNotRepeatNGrams
 		of: 'aaa'
 		are: {#aa}! !
 
-!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 6/17/2023 17:43:54'!
-assertObjectsClassifiedUnderAll: categories are: expectedObjects 
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 11/30/2023 10:28:12'!
+assert: aTerm isFoundIn: aDocument 
 	
-	| actualObjects |
-	actualObjects := index classifiedUnderAll: categories.
+	self assertAll: {aTerm} areFoundInAll: {aDocument}.! !
+
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 11/30/2023 10:26:40'!
+assertAll: terms areFoundIn: aDocument 
+	
+	self assertAll: terms areFoundInAll: {aDocument}! !
+
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 11/30/2023 11:01:20'!
+assertAll: terms areFoundInAll: documents 
 	
 	self
-		assert: expectedObjects asSet
-		equals: actualObjects! !
+		assert: (index documentsIncludingAll: terms)
+		equals: documents asSet! !
 
-!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 6/17/2023 17:38:04'!
-classify: anObject underAll: categories
-
-	index
-		classify: anObject
-		underAll: categories! !
-
-!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 7/9/2023 16:08:26'!
-remove: anObject  
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 11/30/2023 10:42:12'!
+denyAreFound: terms 
 	
-	index remove: anObject
+	self assertAll: terms areFoundInAll: {}! !
+
+!InvertedIndexTest methodsFor: 'assertions' stamp: 'NPM 11/30/2023 10:44:58'!
+denyIsFound: aTerm
+
+	self denyAreFound: {aTerm}! !
+
+!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 11/30/2023 10:58:35'!
+add: aDocument including: aTerm 
+
+	self add: aDocument includingAll: {aTerm}.! !
+
+!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 11/30/2023 10:58:23'!
+add: aDocument includingAll: terms
+
+	index add: aDocument includingAll: terms! !
+
+!InvertedIndexTest methodsFor: 'exercise' stamp: 'NPM 11/30/2023 10:38:57'!
+remove: aDocument  
+	
+	index remove: aDocument
 		! !
 
-!InvertedIndexTest methodsFor: 'setUp/tearDown' stamp: 'NPM 6/18/2023 16:04:08'!
+!InvertedIndexTest methodsFor: 'setUp/tearDown' stamp: 'NPM 12/1/2023 00:45:47'!
 setUp
 
 	super setUp.
 	
 	index := InvertedIndex
-		storingClassifiedObjectsIn: Dictionary new
-		creatingValuesWith: [ Set new ].! !
+		storingEntriesIn: Dictionary new
+		creatingDocumentCollectionsWith: [ Set new ].! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:42'!
-test001_ClassifiesASingleObjectUnderASingleCategory
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:22:28'!
+test001_FindsASingleDocumentContainingASingleTerm
 
-	self classify: #apple underAll: {#fruits}.
+	self add: #fruits including: #apple.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#fruits}
-		are: {#apple}! !
+	self assert: #apple isFoundIn: #fruits.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:47'!
-test002_ClassifiesMultipleObjectsUnderASingleCategory
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:24:47'!
+test002_FindsASingleDocumentContainingMultipleTerms
 
-	self classify: #apple underAll: {#fruits}.
-	self classify: #orange underAll: {#fruits}.
+	self add: #fruits includingAll: {#apple. #orange}.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#fruits}
-		are: {#apple. #orange}.! !
+	self assertAll: {#apple. #orange} areFoundIn: #fruits.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:51'!
-test003_DoesNotReturnObjectsWhenACategoryDoesNotExist
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:41:53'!
+test003_DoesNotFindDocumentsForTermsThatHaveNotBeenIndexed
 
-	self
-		assertObjectsClassifiedUnderAll: {#fruits}
-		are: {}.! !
+	self denyIsFound: #apple! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:55'!
-test004_DoesNotReturnObjectsClassifiedUnderADifferentCategory
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:30:41'!
+test004_FindsOnlyTheDocumentsContainingTheSearchedTerms
 
-	self classify: #apple underAll: {#fruits}.
-	self classify: #water underAll: {#drinks}.
+	self add: #fruits including: #apple.
+	self add: #drinks including: #water.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#drinks}
-		are: {#water}.! !
+	self assert: #apple isFoundIn: #fruits.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:06:59'!
-test005_ClassifiesMultipleObjectsUnderMultipleCategories
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:33:36'!
+test005_FindsTheDocumentsContainingAllSearchedTerms
 
-	self classify: #apple underAll: {#fruits. #red. #big}.
-	self classify: #cherry underAll: {#fruits. #red. #small}.
+	self add: #fruits includingAll: {#apple. #cherry}.
+	self add: #redFruits includingAll: {#apple. #cherry}.
+	self add: #bigFruits includingAll: {#apple.}.
+	self add: #smallFruits includingAll: {#cherry}.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#red. #big}
-		are: {#apple}.! !
+	self assertAll: {#apple. #cherry} areFoundInAll: {#fruits. #redFruits}.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:07:02'!
-test006_DoesNotReturnObjectWhenCategoriesAreDisjoint
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:42:12'!
+test006_DoesNotFindDocumentsContainingAnyOfTheSearchedTerms
 
-	self classify: #apple underAll: {#red.}.
-	self classify: #banana underAll: {#yellow}.
+	self add: #bigFruits includingAll: {#apple}.
+	self add: #smallFruits includingAll: {#cherry}.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#red. #yellow}
-		are: {}.! !
+	self denyAreFound: {#apple. #cherry}.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 6/18/2023 16:07:06'!
-test007_DoesNotReturnObjectsWhenACategoriesAreEmpty
-
-	self
-		assertObjectsClassifiedUnderAll: {}
-		are: {}.! !
-
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 7/9/2023 16:08:18'!
-test008_RemovesASingleObjectFromASingleCategory
-
-	self classify: #apple underAll: {#fruits. #red}.
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:41:53'!
+test007_RemovesADocumentAndItsTermsFromTheIndex
 	
-	self remove: #apple .
+	self add: #fruits including: #apple.
 	
-	self
-		assertObjectsClassifiedUnderAll: {#fruits}
-		are: {}.
-	self
-		assertObjectsClassifiedUnderAll: {#red}
-		are: {}! !
+	self remove: #fruits.
+	
+	self denyIsFound: #apple.! !
 
-!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 7/9/2023 16:10:29'!
-test009_DoesNotRemoveOtherObjectsWhenRemovingOne
+!InvertedIndexTest methodsFor: 'tests' stamp: 'NPM 11/30/2023 10:40:47'!
+test008_DoesNotRemoveTermsIncludedInManyDocumentsWhenRemovingOne
+	
+	self add: #fruits including: #apple.
+	self add: #redFruits including: #apple.
+	
+	self remove: #fruits.
+	
+	self assert: #apple isFoundIn: #redFruits.! !
 
-	self classify: #apple underAll: {#fruits. #red}.
-	self classify: #cherry underAll: {#fruits. #red}.
-	self classify: #hammer underAll: {#tools}.
+!NGramIndexTest methodsFor: 'assertions' stamp: 'NPM 12/1/2023 00:31:43'!
+assert: aQuery isFoundIn: aDocument
+
+	self
+		assert: (trigramIndex locationsMatching: aQuery)
+		equals: {aDocument} asSet! !
+
+!NGramIndexTest methodsFor: 'assertions' stamp: 'NPM 12/1/2023 00:56:06'!
+denyIsFound: aQuery
+
+	self
+		assert: (trigramIndex locationsMatching: aQuery)
+		equals: {} asSet! !
+
+!NGramIndexTest methodsFor: 'excercise' stamp: 'NPM 12/1/2023 00:28:31'!
+add: aDocument at: aLocation 
 	
-	self remove: #apple .
+	trigramIndex add: aDocument at: aLocation! !
+
+!NGramIndexTest methodsFor: 'excercise' stamp: 'NPM 12/1/2023 01:02:22'!
+remove: aLocation 
 	
-	self
-		assertObjectsClassifiedUnderAll: {#fruits}
-		are: {#cherry}.
-	self
-		assertObjectsClassifiedUnderAll: {#red}
-		are: {#cherry}.
-	self
-		assertObjectsClassifiedUnderAll: {#tools}
-		are: {#hammer}! !
+	trigramIndex removeDocumentsAt: aLocation! !
+
+!NGramIndexTest methodsFor: 'setUp/tearDown' stamp: 'NPM 12/1/2023 00:56:22'!
+setUp
+
+	super setUp.
+	
+	trigramIndex := NGramIndex
+		ofSize: 3
+		storingEntriesIn: Dictionary new
+		creatingDocumentCollectionsWith: [ Set new ].! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:49:32'!
+test001_FindsADocumentContainingASingleNGram
+	
+	self add: 'car' at: 'car.txt'.
+	
+	self assert: 'car' isFoundIn: 'car.txt'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:56:06'!
+test002_DoesNotFindDocumentsWhenTheQuerySizeIsLessThanTheNGramSize
+	
+	self add: '' at: 'car.txt'.
+	self add: 'c' at: 'car1.txt'.
+	self add: 'ca' at: 'car1.txt'.
+		
+	self denyIsFound: ''.
+	self denyIsFound: 'c'.
+	self denyIsFound: 'd'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:56:06'!
+test003_DoesNotFindDocumentsWhenItIsEmpty
+	
+	self denyIsFound: 'car'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:50:37'!
+test004_FindsDocumentsContainingAllNGramsInTheQuery
+	
+	self add: 'truck' at: 'trucks.txt'.
+	
+	self assert: 'tru' isFoundIn: 'trucks.txt'.
+	self assert: 'ruc' isFoundIn: 'trucks.txt'.
+	self assert: 'uck' isFoundIn: 'trucks.txt'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:52:06'!
+test005_FindsDocumentsWhenTheQuerySizeIsGreaterThanTheNGramSize
+	
+	self add: 'truck' at: 'trucks.txt'.
+	
+	self assert: 'truc' isFoundIn: 'trucks.txt'.
+	self assert: 'ruck' isFoundIn: 'trucks.txt'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:53:00'!
+test006_FindsDocumentsIgnoringTheQueryCase
+	
+	self add: 'car' at: 'car.txt'.
+	
+	self assert: 'CAR' isFoundIn: 'car.txt'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:53:42'!
+test007_FindsDocumentsIgnoringTheDocumentsCase
+	
+	self add: 'CAR' at: 'car.txt'.
+	
+	self assert: 'car' isFoundIn: 'car.txt'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 00:56:06'!
+test008_DoesNotFindDocumentsWhenThereAreNoMatchesForAtLeastOneNGramFromTheQuery
+	
+	self add: 'truck' at: 'trucks.txt'.
+	
+	self denyIsFound: 'trux'.! !
+
+!NGramIndexTest methodsFor: 'tests' stamp: 'NPM 12/1/2023 01:01:42'!
+test009_DoesNotFindDocumentsAtALocationWhenItIsRemoved
+	
+	self add: 'truck' at: 'trucks.txt'.
+	
+	self remove: 'trucks.txt'.
+	
+	self denyIsFound: 'truck'.! !
 
 !SourceCodeIndexTest methodsFor: 'assertions' stamp: 'NPM 6/20/2023 12:28:33'!
 assertSearchingFor: aQuery caseSensitive: aBoolean returns: expectedCompiledMethods 
@@ -844,7 +946,7 @@ addToIndex: aCompiledMethod
 
 	sourceCodeIndex add: aCompiledMethod.! !
 
-!SourceCodeIndexTest methodsFor: 'excercise' stamp: 'NPM 7/1/2023 17:02:47'!
+!SourceCodeIndexTest methodsFor: 'excercise' stamp: 'NPM 12/1/2023 01:03:57'!
 removeFromIndex: aCompiledMethod
 	
 	sourceCodeIndex remove: aCompiledMethod! !
@@ -1264,12 +1366,17 @@ buildIndex
 		
 	^ newIndex! !
 
-!SourceCodeCatalog class methodsFor: 'indexing' stamp: 'NPM 7/14/2023 00:23:29'!
+!SourceCodeCatalog class methodsFor: 'indexing' stamp: 'NPM 11/9/2023 14:20:18'!
 index
 
-	index ifNil: [ index := self buildIndex ].
+	index ifNil: [ self rebuildIndex ].
 	
 	^ index! !
+
+!SourceCodeCatalog class methodsFor: 'indexing' stamp: 'NPM 11/9/2023 14:20:18'!
+rebuildIndex
+
+	^ index := self buildIndex! !
 
 !ToolsCatalog methodsFor: 'accessing' stamp: 'NPM 3/31/2020 19:09:53'!
 name
@@ -1515,7 +1622,7 @@ browseSelectedResult
 
 !Finder methodsFor: 'results' stamp: 'NPM 4/20/2020 17:03:53'!
 close
-	
+
 	self changed: closeEvent! !
 
 !Finder methodsFor: 'results' stamp: 'NPM 3/28/2020 01:43:57'!
@@ -1678,34 +1785,6 @@ forFiltering: aCollection with: aSubstring
 		initializeFiltering: aCollection
 		with: aSubstring ! !
 
-!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:19:10'!
-add: aDocument 
-	
-	invertedIndex
-		classify: aDocument
-		underAll: (trigramTokenizer value: aDocument)! !
-
-!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:18:34'!
-addAll: documents
-
-	documents do: [ :document | self add: document ].! !
-
-!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:20:56'!
-at: aTrigram
-		
-	^ invertedIndex classifiedUnder: aTrigram! !
-
-!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:18:05'!
-initialize
-
-	trigramTokenizer := NGramTokenizer nGramSize: 3.
-	invertedIndex := InvertedIndex storingClassifiedObjectsIn: Dictionary new creatingValuesWith: [ OrderedCollection new ].! !
-
-!TrigramIndex methodsFor: 'as yet unclassified' stamp: 'NPM 11/5/2023 19:22:30'!
-search: aQuery
-		
-	^ invertedIndex classifiedUnderAll: (trigramTokenizer value: aQuery)! !
-
 !CatalogButton methodsFor: 'evaluating' stamp: 'NPM 3/29/2020 13:13:43'!
 value
 	
@@ -1827,112 +1906,147 @@ nGramSize: numberOfCharacters
 		new
 		initializeNGramSize: numberOfCharacters ! !
 
-!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 6/18/2023 16:02:47'!
-classify: anObject under: aCategory
-
-	| classifiedObjects |
+!InvertedIndex methodsFor: 'indexing' stamp: 'NPM 12/1/2023 00:42:41'!
+add: aDocument including: aTerm 
 	
-	classifiedObjects := objectsClassifiedByCategory
-		at: aCategory
-		ifAbsentPut: valueCreationBlock.
+	| documentsIncludingTheTerm |
 	
-	classifiedObjects add: anObject! !
-
-!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 5/25/2023 15:49:16'!
-classify: anObject underAll: categories 
+	documentsIncludingTheTerm := documentsByTerms
+		at: aTerm
+		ifAbsentPut: documentsCollectionCreationBlock.
 	
-	categories do: [ :category | self classify: anObject under: category ]
-	! !
+	documentsIncludingTheTerm add: aDocument! !
 
-!InvertedIndex methodsFor: 'classifying' stamp: 'NPM 7/9/2023 16:10:57'!
-remove: anObject  
+!InvertedIndex methodsFor: 'indexing' stamp: 'NPM 11/30/2023 10:56:52'!
+add: aDocument includingAll: terms 
 	
-	objectsClassifiedByCategory
-		keysAndValuesRemove: [ :category :classifiedObjects |
-			classifiedObjects remove: anObject ifAbsent: [ "Do nothing. NPM" ].
-			classifiedObjects isEmpty ]! !
+	terms do: [ :term | self add: aDocument including: term ]! !
 
-!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 6/18/2023 16:02:47'!
-classifiedUnder: aCategory
-
-	^ objectsClassifiedByCategory
-		at: aCategory
-		ifAbsent: valueCreationBlock! !
-
-!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 6/18/2023 16:02:47'!
-classifiedUnderAll: categories 
-
-	^ categories
-		collect: [ :category | self classifiedUnder: category ]
-		andFold: [ :classifiedObjects :otherClassifiedObjects | classifiedObjects intersection: otherClassifiedObjects ]
-		ifEmpty: valueCreationBlock! !
-
-!InvertedIndex methodsFor: 'initialization' stamp: 'NPM 6/18/2023 16:02:47'!
-initializeStoringClassifiedObjectsIn: aDictionary creatingValuesWith: aBlock
-
-	objectsClassifiedByCategory := aDictionary.
-	valueCreationBlock := aBlock.! !
-
-!InvertedIndex class methodsFor: 'instance creation' stamp: 'NPM 11/6/2023 01:36:43'!
-empty
+!InvertedIndex methodsFor: 'indexing' stamp: 'NPM 11/30/2023 10:39:03'!
+remove: aDocument  
 	
-	^ self
-		storingClassifiedObjectsIn: Dictionary new
-		creatingValuesWith: [ OrderedCollection new ]! !
+	documentsByTerms
+		keysAndValuesRemove: [ :term :documents |
+			documents remove: aDocument ifAbsent: [ "Do nothing. NPM" ].
+			documents isEmpty ]! !
 
-!InvertedIndex class methodsFor: 'instance creation' stamp: 'NPM 6/18/2023 16:03:47'!
-storingClassifiedObjectsIn: aDictionary creatingValuesWith: aBlock
+!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 12/1/2023 00:42:41'!
+documentsIncluding: aTerm
+
+	^ documentsByTerms
+		at: aTerm
+		ifAbsent: documentsCollectionCreationBlock! !
+
+!InvertedIndex methodsFor: 'enumerating' stamp: 'NPM 12/1/2023 00:42:41'!
+documentsIncludingAll: terms 
+
+	^ terms
+		collect: [ :term | self documentsIncluding: term ]
+		andFold: [ :result :documentsIncludingATerm | result intersection: documentsIncludingATerm ]
+		ifEmpty: documentsCollectionCreationBlock! !
+
+!InvertedIndex methodsFor: 'initialization' stamp: 'NPM 12/1/2023 00:46:01'!
+initializeStoringEntriesIn: aDictionary creatingDocumentCollectionsWith: aBlock
+
+	documentsByTerms := aDictionary.
+	documentsCollectionCreationBlock := aBlock.! !
+
+!InvertedIndex class methodsFor: 'instance creation' stamp: 'NPM 12/1/2023 00:46:01'!
+storingEntriesIn: aDictionary creatingDocumentCollectionsWith: aBlock
 
 	^ self
 		new
-		initializeStoringClassifiedObjectsIn: aDictionary
-		creatingValuesWith: aBlock! !
+		initializeStoringEntriesIn: aDictionary
+		creatingDocumentCollectionsWith: aBlock! !
 
-!SourceCodeIndex methodsFor: 'enumeration' stamp: 'NPM 7/1/2023 16:19:27'!
-searchCandidateResultsFor: aQuery
+!InvertedIndex class methodsFor: 'as yet unclassified' stamp: 'NPM 12/2/2023 00:23:13'!
+empty
 	
-	| queryCategories |
-	queryCategories :=  tokenizer value: aQuery.
-	
-	^ index classifiedUnderAll: queryCategories.! !
+	^ self
+		storingEntriesIn: Dictionary new
+		creatingDocumentCollectionsWith: [ Set new ]! !
 
-!SourceCodeIndex methodsFor: 'enumeration' stamp: 'NPM 7/1/2023 16:22:17'!
+!NGramIndex methodsFor: 'enumerating' stamp: 'NPM 12/1/2023 00:39:57'!
+locationsMatching: aQuery 
+	
+	^ invertedIndex documentsIncludingAll: (nGramTokenizer value: aQuery)! !
+
+!NGramIndex methodsFor: 'indexing' stamp: 'NPM 12/1/2023 00:34:03'!
+add: aDocument at: aLocation 
+	
+	invertedIndex
+		add: aLocation
+		includingAll: (nGramTokenizer value: aDocument)! !
+
+!NGramIndex methodsFor: 'indexing' stamp: 'NPM 12/1/2023 01:03:15'!
+removeDocumentsAt: aLocation 
+	
+	invertedIndex remove: aLocation! !
+
+!NGramIndex methodsFor: 'initialization' stamp: 'NPM 12/1/2023 01:17:04'!
+initializeTokenizingDocumentsWith: anNGramTokenizer storingEntriesIn: anInvertedIndex 
+	
+	nGramTokenizer := anNGramTokenizer.
+	invertedIndex := anInvertedIndex.! !
+
+!NGramIndex class methodsFor: 'as yet unclassified' stamp: 'NPM 12/1/2023 00:46:52'!
+ofSize: nGramSize storingEntriesIn: aDictionary creatingDocumentCollectionsWith: postingListCreationBlock 
+
+	^ self 
+		tokenizingDocumentsWith: (NGramTokenizer nGramSize: nGramSize)
+		storingEntriesIn: (InvertedIndex storingEntriesIn: aDictionary creatingDocumentCollectionsWith: postingListCreationBlock)! !
+
+!NGramIndex class methodsFor: 'as yet unclassified' stamp: 'NPM 12/1/2023 01:17:04'!
+tokenizingDocumentsWith: anNGramTokenizer storingEntriesIn: anInvertedIndex 
+
+	^ self new
+		initializeTokenizingDocumentsWith: anNGramTokenizer
+		storingEntriesIn: anInvertedIndex ! !
+
+!NGramIndex class methodsFor: 'instance creation' stamp: 'NPM 12/2/2023 00:27:06'!
+trigram
+	
+	^ self
+		ofSize: 3
+		storingEntriesIn: Dictionary new
+		creatingDocumentCollectionsWith: [ Set new ]! !
+
+!SourceCodeIndex methodsFor: 'enumerating' stamp: 'NPM 12/1/2023 00:59:15'!
 searchFor: aQuery caseSensitive: aBoolean  
+
+	| candidateResults |
+	candidateResults := trigramIndex locationsMatching: aQuery.
 	
-	^ (self searchCandidateResultsFor: aQuery)
+	^ candidateResults
 		select: [ :compiledMethod | self matches: compiledMethod query: aQuery caseSensitive: aBoolean ].! !
 
-!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 6/29/2023 10:40:01'!
+!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 11/9/2023 16:58:38'!
 add: aCompiledMethod
 
 	| sourceCode |
 	sourceCode := aCompiledMethod sourceCode.
 	
+	"Performance optimization: we cache the source code so we
+	don't have to fetch it from the disk each time. NPM"
 	sourceCodeCache at: aCompiledMethod put: sourceCode.
 	
-	index
-		classify: aCompiledMethod
-		underAll: (tokenizer value: sourceCode)! !
+	trigramIndex add: sourceCode at: aCompiledMethod.! !
 
-!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 7/15/2023 15:59:33'!
+!SourceCodeIndex methodsFor: 'indexing' stamp: 'NPM 12/1/2023 01:04:02'!
 remove: aCompiledMethod 
 	
-	index remove: aCompiledMethod! !
+	trigramIndex removeDocumentsAt: aCompiledMethod! !
 
-!SourceCodeIndex methodsFor: 'initialization' stamp: 'NPM 7/1/2023 16:12:17'!
+!SourceCodeIndex methodsFor: 'initialization' stamp: 'NPM 12/1/2023 00:58:16'!
 initialize
 
 	super initialize.
 	
-	tokenizer := NGramTokenizer nGramSize: 3.
-	
+	"An IdentitySet is used because elements are instances of CompiledMethod."
+	trigramIndex := NGramIndex ofSize: 3 storingEntriesIn: Dictionary new creatingDocumentCollectionsWith: [ IdentitySet new ].
+		
 	"An IdentityDictionary is used because keys are instances of CompiledMethod."
-	sourceCodeCache := IdentityDictionary new.
-	
-	index := InvertedIndex
-		storingClassifiedObjectsIn: Dictionary new
-		"An IdentitySet is used because elements are instances of CompiledMethod."
-		creatingValuesWith: [ IdentitySet new ].! !
+	sourceCodeCache := IdentityDictionary new.! !
 
 !SourceCodeIndex methodsFor: 'testing' stamp: 'NPM 7/1/2023 16:21:26'!
 matches: aCompiledMethod query: aQuery caseSensitive: aBoolean  
